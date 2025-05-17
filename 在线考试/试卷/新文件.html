@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠佳曦烤地瓜🍠考试系统📝</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --error: #e74c3c;
+            --background: #f8f9fa;
+            --text-color: #333;
+            --card-background: white;
+            --border-color: #eee;
+        }
+
+        /* 护眼模式为默认 */
+        body.eye-protection-mode {
+            --background: #f5f5dc;
+            --text-color: #333;
+            --card-background: #fffff0;
+            --border-color: #ccc;
+        }
+
+        body.dark-mode {
+            --background: #121212;
+            --text-color: #d0d0d0;
+            --card-background: #1e1e1e;
+            --border-color: #333;
+            --primary: #1f1f1f;
+            --secondary: #4db8ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui;
+            margin: 20px;
+            background: var(--background);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-background);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--card-background);
+            color: var(--text-color);
+        }
+
+        .question-card {
+            padding: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            margin: 15px 0;
+            background: var(--card-background);
+        }
+
+        .timer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+        }
+
+        button {
+            background: var(--secondary);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #importMenu, #visualEditor {
+            display: none;
+            margin-top: 10px;
+            padding: 15px;
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .import-option, .editor-section {
+            margin-bottom: 10px;
+        }
+
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--card-background);
+            color: var(--text-color);
+            margin-bottom: 10px;
+        }
+
+        textarea {
+            height: 200px;
+        }
+
+        .json-example {
+            font-family: monospace;
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .option-item input[type="text"] {
+            flex: 1;
+            margin-right: 10px;
+            margin-bottom: 0;
+        }
+
+        .option-item button {
+            padding: 6px 12px;
+        }
+
+        .correct-answer {
+            margin-top: 10px;
+        }
+
+        .preview-area {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px dashed var(--border-color);
+            border-radius: 6px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .tab-button {
+            padding: 8px 16px;
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            cursor: pointer;
+            border-radius: 6px 6px 0 0;
+            margin-right: 5px;
+        }
+
+        .tab-button.active {
+            background: var(--secondary);
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="eye-protection-mode">
+    <div class="container">
+        <div class="toolbar">
+            <!-- 主题选择下拉菜单 -->
+            <select id="themeSelect" onchange="setMode(this.value)">
+                <option value="eye-protection">护眼模式</option>
+                <option value="dark">夜间模式</option>
+                <option value="default">默认模式</option>
+            </select>
+
+            <!-- 功能按钮 -->
+            <button onclick="switchExam()">切换试卷</button>
+            <button onclick="toggleImportMenu()">导入试卷</button>
+            <button onclick="showVisualEditor()">可视化出题</button>
+            <button id="examControlBtn" onclick="startOrSubmitExam()">开始考试</button>
+        </div>
+
+        <h1>佳曦🧨烤地瓜🍠在线考试系统📝</h1>
+        <label for="studentName">考生姓名:</label>
+        <input type="text" id="studentName" placeholder="请输入考生姓名" required>
+        <div class="timer" id="timer">剩余时间: 30:00</div>
+        
+        <!-- 导入试卷菜单 -->
+        <div id="importMenu">
+            <div class="tab-buttons">
+                <div class="tab-button active" onclick="switchTab('fileTab')">上传JSON文件</div>
+                <div class="tab-button" onclick="switchTab('pasteTab')">问AI要数据</div>
+            </div>
+            
+            <div id="fileTab" class="import-option">
+                <h3>方式一：上传JSON文件</h3>
+                <input type="file" id="importFile" accept=".json">
+                <button onclick="importFromFile()">确认上传</button>
+            </div>
+            
+            <div id="pasteTab" class="import-option" style="display:none;">
+                <h3>方式二：问别的AI要数据</h3>
+                <textarea id="jsonInput" placeholder="请在此粘贴JSON格式的试卷数据..."></textarea>
+                <button onclick="importFromText()">确认导入</button>
+                
+                <details>
+                    <summary>复制以下JSON格式示例</summary>
+                    <div class="json-example">
+请严格按照以下数据格式，帮我出小学三年级考试题目:
+[
+    {
+        "type": "radio",
+        "content": "中国的首都是哪个城市？",
+        "options": ["北京", "上海", "广州"],
+        "correct": "A"
+    },
+    {
+        "type": "text",
+        "content": "《静夜思》的作者是谁？",
+        "correct": "李白"
+    },
+    {
+        "type": "checkbox",
+        "content": "以下哪些是水果？",
+        "options": ["苹果", "土豆", "香蕉", "西红柿"],
+        "correct": ["A", "C"]
+    }
+]
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <!-- 可视化编辑器 -->
+        <div id="visualEditor">
+            <h2>可视化题目编辑器</h2>
+            <div class="editor-section">
+                <label for="questionType">题目类型:</label>
+                <select id="questionType" onchange="changeQuestionType()">
+                    <option value="radio">单选题</option>
+                    <option value="checkbox">多选题</option>
+                    <option value="text">填空题</option>
+                </select>
+            </div>
+            
+            <div class="editor-section">
+                <label for="questionContent">题目内容:</label>
+                <textarea id="questionContent" placeholder="请输入题目内容..."></textarea>
+            </div>
+            
+            <div id="optionsSection" class="editor-section">
+                <label>题目选项:</label>
+                <div id="optionsContainer">
+                    <div class="option-item">
+                        <input type="text" placeholder="选项A">
+                        <button onclick="removeOption(this)">删除</button>
+                    </div>
+                    <div class="option-item">
+                        <input type="text" placeholder="选项B">
+                        <button onclick="removeOption(this)">删除</button>
+                    </div>
+                </div>
+                <button onclick="addOption()">添加选项</button>
+            </div>
+            
+            <div id="correctAnswerSection" class="editor-section correct-answer">
+                <label>正确答案:</label>
+                <div id="radioAnswer" style="display:block;">
+                    <select id="radioCorrect">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                    </select>
+                </div>
+                <div id="checkboxAnswer" style="display:none;">
+                    <label><input type="checkbox" name="checkboxCorrect" value="A"> A</label>
+                    <label><input type="checkbox" name="checkboxCorrect" value="B"> B</label>
+                </div>
+                <div id="textAnswer" style="display:none;">
+                    <input type="text" id="textCorrect" placeholder="请输入正确答案">
+                </div>
+            </div>
+            
+            <div class="editor-section">
+                <button onclick="addQuestion()">添加到试卷</button>
+                <button onclick="generateJson()">生成JSON</button>
+                <button onclick="clearEditor()">清空编辑器</button>
+            </div>
+            
+            <div class="preview-area">
+                <h3>当前试卷预览 (共<span id="questionCount">0</span>题)</h3>
+                <div id="questionPreview"></div>
+                <button onclick="saveQuestions()" style="margin-top:10px;">保存为当前试卷</button>
+            </div>
+        </div>
+
+        <div id="questionContainer"></div>
+    </div>
+
+    <script>
+        // ================= 全局变量 =================
+        let currentQuestions = [];
+        let currentExam = 'questions.json';
+        let timeLeft = 1800; // 30分钟
+        let timerInterval;
+        let importMenuVisible = false;
+        let editorQuestions = [];
+        let examStarted = false;
+
+        // ================= 主题切换功能 =================
+        function setMode(mode) {
+            document.body.className = mode + '-mode';
+            localStorage.setItem('mode', mode);
+        }
+
+        // ================= 初始化 =================
+        window.onload = function() {
+            // 设置主题
+            const savedMode = localStorage.getItem('mode') || 'eye-protection';
+            document.getElementById('themeSelect').value = savedMode;
+            setMode(savedMode);
+            
+            // 初始化考试
+            initExam();
+            
+            // 隐藏导入菜单和编辑器
+            document.getElementById('importMenu').style.display = 'none';
+            document.getElementById('visualEditor').style.display = 'none';
+            
+            // 禁用题目容器，直到考试开始
+            document.getElementById('questionContainer').style.pointerEvents = 'none';
+            document.getElementById('questionContainer').style.opacity = '0.6';
+        };
+
+        // ================= 考试功能 =================
+        async function initExam() {
+            clearInterval(timerInterval);
+            timeLeft = 1800;
+            updateTimerDisplay();
+            examStarted = false;
+            updateExamControlButton();
+
+            try {
+                const response = await fetch(`./data/${currentExam}`);
+                if (!response.ok) throw new Error(`无法加载试卷：${currentExam}`);
+                currentQuestions = await response.json();
+                renderQuestions();
+            } catch (error) {
+                console.error(error);
+                alert('加载试卷失败，请检查文件路径！');
+            }
+        }
+
+        function switchExam() {
+            if (examStarted) {
+                if (!confirm('考试已经开始，切换试卷将重置当前考试，确定要继续吗？')) {
+                    return;
+                }
+            }
+            currentExam = currentExam === 'questions.json' ? 'questions1.json' : 'questions.json';
+            initExam();
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questionContainer');
+            container.innerHTML = currentQuestions.map((q, index) => `
+                <div class="question-card">
+                    <h3>题目 ${index + 1} (${getQuestionTypeName(q.type)})</h3>
+                    <p>${q.content}</p>
+                    ${q.options ? q.options.map((opt, optIndex) => `
+                        <label style="display:block; margin:8px 0;">
+                            <input type="${q.type}" name="q${index}" value="${opt}">
+                            ${String.fromCharCode(65 + optIndex)}. ${opt}
+                        </label>
+                    `).join('') : ''}
+                    ${q.type === 'text' ? `
+                        <input type="text" style="width:100%; padding:8px;" 
+                               placeholder="请输入答案" data-question-id="${index}">
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function getQuestionTypeName(type) {
+            return {
+                'text': '填空',
+                'radio': '单选',
+                'checkbox': '多选'
+            }[type] || '未知';
+        }
+
+        // ================= 考试控制按钮功能 =================
+        function startOrSubmitExam() {
+            if (examStarted) {
+                submitExam();
+            } else {
+                startExam();
+            }
+        }
+
+        function startExam() {
+            const studentName = document.getElementById('studentName').value.trim();
+            if (!studentName) {
+                alert('请输入考生姓名！');
+                return;
+            }
+            
+            examStarted = true;
+            updateExamControlButton();
+            
+            // 启用题目容器
+            document.getElementById('questionContainer').style.pointerEvents = 'auto';
+            document.getElementById('questionContainer').style.opacity = '1';
+            
+            // 开始计时
+            startTimer();
+        }
+
+        function updateExamControlButton() {
+            const btn = document.getElementById('examControlBtn');
+            if (examStarted) {
+                btn.textContent = '提交试卷';
+                btn.style.backgroundColor = 'var(--success)';
+            } else {
+                btn.textContent = '开始考试';
+                btn.style.backgroundColor = 'var(--secondary)';
+            }
+        }
+
+        // ================= 计时器功能 =================
+        function startTimer() {
+            clearInterval(timerInterval); // 清除之前的计时器
+            timeLeft = 1800;
+            updateTimerDisplay();
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    submitExam();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const seconds = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `剩余时间: ${minutes}:${seconds}`;
+            
+            // 时间不足5分钟时变红色
+            if (timeLeft <= 300) {
+                document.getElementById('timer').style.backgroundColor = 'var(--error)';
+            }
+        }
+
+        // ================= 导入功能 =================
+        function toggleImportMenu() {
+            const menu = document.getElementById('importMenu');
+            const editor = document.getElementById('visualEditor');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            editor.style.display = 'none';
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.import-option').forEach(el => el.style.display = 'none');
+            document.getElementById(tabId).style.display = 'block';
+            
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function importFromFile() {
+            const fileInput = document.getElementById('importFile');
+            if (!fileInput.files.length) {
+                alert('请先选择文件');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    validateAndImport(data);
+                } catch (e) {
+                    alert('文件解析失败：' + e.message);
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('文件读取失败');
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function importFromText() {
+            const jsonText = document.getElementById('jsonInput').value.trim();
+            if (!jsonText) {
+                alert('请输入JSON数据');
+                return;
+            }
+
+            try {
+                const data = JSON.parse(jsonText);
+                validateAndImport(data);
+            } catch (e) {
+                alert('JSON解析失败：' + e.message);
+            }
+        }
+
+        function validateAndImport(data) {
+            if (!Array.isArray(data)) {
+                throw new Error('试卷数据必须是数组');
+            }
+            
+            // 简单验证题目格式
+            const isValid = data.every(q => {
+                return q.content && q.correct && 
+                      (q.type === 'text' || (q.options && Array.isArray(q.options)));
+            });
+            
+            if (!isValid) {
+                throw new Error('试卷格式不正确，请检查题目结构');
+            }
+            
+            currentQuestions = data;
+            renderQuestions();
+            alert(`成功导入 ${data.length} 道题目`);
+            document.getElementById('importMenu').style.display = 'none';
+        }
+
+        // ================= 可视化编辑器功能 =================
+        function showVisualEditor() {
+            const menu = document.getElementById('importMenu');
+            const editor = document.getElementById('visualEditor');
+            menu.style.display = 'none';
+            editor.style.display = editor.style.display === 'none' ? 'block' : 'none';
+            
+            // 初始化编辑器状态
+            if (editor.style.display === 'block') {
+                updatePreview();
+            }
+        }
+
+        function changeQuestionType() {
+            const type = document.getElementById('questionType').value;
+            
+            // 显示/隐藏选项部分
+            document.getElementById('optionsSection').style.display = 
+                type === 'text' ? 'none' : 'block';
+            
+            // 切换正确答案输入方式
+            document.getElementById('radioAnswer').style.display = 
+                type === 'radio' ? 'block' : 'none';
+            document.getElementById('checkboxAnswer').style.display = 
+                type === 'checkbox' ? 'block' : 'none';
+            document.getElementById('textAnswer').style.display = 
+                type === 'text' ? 'block' : 'none';
+        }
+
+        function addOption() {
+            const container = document.getElementById('optionsContainer');
+            const optionCount = container.children.length;
+            const nextChar = String.fromCharCode(65 + optionCount);
+            
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option-item';
+            optionDiv.innerHTML = `
+                <input type="text" placeholder="选项${nextChar}">
+                <button onclick="removeOption(this)">删除</button>
+            `;
+            container.appendChild(optionDiv);
+            
+            // 更新单选/多选答案选项
+            updateAnswerOptions();
+        }
+
+        function removeOption(button) {
+            const container = document.getElementById('optionsContainer');
+            if (container.children.length <= 2) {
+                alert('至少需要两个选项');
+                return;
+            }
+            
+            button.parentElement.remove();
+            updateAnswerOptions();
+        }
+
+        function updateAnswerOptions() {
+            const container = document.getElementById('optionsContainer');
+            const options = container.children;
+            
+            // 更新单选下拉框
+            const radioSelect = document.getElementById('radioCorrect');
+            radioSelect.innerHTML = '';
+            for (let i = 0; i < options.length; i++) {
+                const char = String.fromCharCode(65 + i);
+                radioSelect.innerHTML += `<option value="${char}">${char}</option>`;
+            }
+            
+            // 更新多选复选框
+            const checkboxContainer = document.getElementById('checkboxAnswer');
+            checkboxContainer.innerHTML = '';
+            for (let i = 0; i < options.length; i++) {
+                const char = String.fromCharCode(65 + i);
+                checkboxContainer.innerHTML += `
+                    <label><input type="checkbox" name="checkboxCorrect" value="${char}"> ${char}</label>
+                `;
+            }
+        }
+
+        function addQuestion() {
+            const type = document.getElementById('questionType').value;
+            const content = document.getElementById('questionContent').value.trim();
+            
+            if (!content) {
+                alert('请输入题目内容');
+                return;
+            }
+            
+            let options = [];
+            let correct = [];
+            
+            if (type !== 'text') {
+                const optionInputs = document.querySelectorAll('#optionsContainer input[type="text"]');
+                options = Array.from(optionInputs).map(input => input.value.trim());
+                
+                if (options.some(opt => !opt)) {
+                    alert('请填写所有选项内容');
+                    return;
+                }
+                
+                if (type === 'radio') {
+                    correct = [document.getElementById('radioCorrect').value];
+                } else {
+                    correct = Array.from(document.querySelectorAll('#checkboxAnswer input:checked'))
+                                 .map(checkbox => checkbox.value);
+                    if (correct.length === 0) {
+                        alert('请选择至少一个正确答案');
+                        return;
+                    }
+                }
+            } else {
+                const answer = document.getElementById('textCorrect').value.trim();
+                if (!answer) {
+                    alert('请输入正确答案');
+                    return;
+                }
+                correct = [answer];
+            }
+            
+            const newQuestion = {
+                type,
+                content,
+                correct
+            };
+            
+            if (type !== 'text') {
+                newQuestion.options = options;
+            }
+            
+            editorQuestions.push(newQuestion);
+            updatePreview();
+            clearEditor();
+            alert('题目已添加！');
+        }
+
+        function updatePreview() {
+            const preview = document.getElementById('questionPreview');
+            const count = document.getElementById('questionCount');
+            
+            count.textContent = editorQuestions.length;
+            preview.innerHTML = editorQuestions.map((q, index) => `
+                <div style="margin-bottom:15px; padding:10px; border-bottom:1px solid var(--border-color);">
+                    <strong>题目 ${index + 1}:</strong> ${q.content}
+                    <div style="font-size:0.9em; color:#666;">
+                        类型: ${getQuestionTypeName(q.type)} | 
+                        正确答案: ${Array.isArray(q.correct) ? q.correct.join(', ') : q.correct}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function clearEditor() {
+            document.getElementById('questionContent').value = '';
+            document.getElementById('textCorrect').value = '';
+            
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = `
+                <div class="option-item">
+                    <input type="text" placeholder="选项A">
+                    <button onclick="removeOption(this)">删除</button>
+                </div>
+                <div class="option-item">
+                    <input type="text" placeholder="选项B">
+                    <button onclick="removeOption(this)">删除</button>
+                </div>
+            `;
+            
+            updateAnswerOptions();
+        }
+
+        function generateJson() {
+            if (editorQuestions.length === 0) {
+                alert('请先添加题目');
+                return;
+            }
+            
+            const jsonStr = JSON.stringify(editorQuestions, null, 2);
+            const jsonInput = document.getElementById('jsonInput');
+            jsonInput.value = jsonStr;
+            
+            // 切换到粘贴JSON标签
+            switchTab('pasteTab');
+            document.getElementById('importMenu').style.display = 'block';
+            document.getElementById('visualEditor').style.display = 'none';
+            
+            alert('已生成JSON数据，您可以在"问AI要数据"标签中查看和编辑');
+        }
+
+        function saveQuestions() {
+            if (editorQuestions.length === 0) {
+                alert('请先添加题目');
+                return;
+            }
+            
+            currentQuestions = [...editorQuestions];
+            renderQuestions();
+            alert(`已保存 ${editorQuestions.length} 道题目为当前试卷`);
+            document.getElementById('visualEditor').style.display = 'none';
+        }
+
+        // ================= 提交功能 =================
+        function submitExam() {
+            clearInterval(timerInterval);
+
+            const studentName = document.getElementById('studentName').value.trim();
+            if (!studentName) {
+                alert('请输入考生姓名！');
+                return;
+            }
+
+            const { score, wrongQuestions } = calculateScore();
+            const timeUsed = 30 * 60 - timeLeft;
+            const minutesUsed = Math.floor(timeUsed / 60).toString().padStart(2, '0');
+            const secondsUsed = (timeUsed % 60).toString().padStart(2, '0');
+            const wrongQuestionNumbers = wrongQuestions.map(q => q.index + 1).join(', ');
+
+            const resultMessage = `🎉考试结束！\n\n👤考生姓名: ${studentName}\n📊得分: ${score}/${currentQuestions.length}\n⏱️用时: ${minutesUsed}:${secondsUsed}\n❌答错题目编号: ${wrongQuestionNumbers || '无'}`;
+            alert(resultMessage);
+            
+            // 重置考试状态
+            examStarted = false;
+            updateExamControlButton();
+            
+            // 禁用题目容器
+            document.getElementById('questionContainer').style.pointerEvents = 'none';
+            document.getElementById('questionContainer').style.opacity = '0.6';
+        }
+
+        function calculateScore() {
+            let score = 0;
+            const wrongQuestions = [];
+
+            currentQuestions.forEach((q, index) => {
+                const correctAnswers = Array.isArray(q.correct) ? 
+                    q.correct.map(a => a.toUpperCase()) : 
+                    [q.correct.toUpperCase()];
+                const userAnswers = getAnswers(index, q.type);
+
+                if (arraysEqual(correctAnswers, userAnswers)) {
+                    score++;
+                } else {
+                    wrongQuestions.push({
+                        index,
+                        question: q.content,
+                        userAnswer: userAnswers,
+                        correctAnswer: correctAnswers
+                    });
+                }
+            });
+
+            return { score, wrongQuestions };
+        }
+
+        function getAnswers(index, type) {
+            if (type === 'text') {
+                const input = document.querySelector(`input[data-question-id="${index}"]`);
+                return [input.value.trim().toUpperCase()];
+            }
+            return Array.from(document.querySelectorAll(`input[name="q${index}"]:checked`))
+                .map(el => el.value.toUpperCase());
+        }
+
+        // ================= 工具函数 =================
+        function arraysEqual(a, b) {
+            if (a.length !== b.length) return false;
+            const sortedA = [...a].sort();
+            const sortedB = [...b].sort();
+            return sortedA.every((val, i) => val === sortedB[i]);
+        }
+    </script>
+</body>
+
+</html>

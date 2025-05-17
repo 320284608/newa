@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生活规律签到</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background-color: #f9fafb;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .habit-btn {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .habit-btn.signed::after {
+            content: "✓";
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #10B981;
+            font-weight: bold;
+        }
+
+        .note-bubble {
+            background: #f1f5f9;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .note-bubble::before {
+            content: "";
+            position: absolute;
+            left: 10px;
+            top: -8px;
+            width: 16px;
+            height: 16px;
+            background: #f1f5f9;
+            transform: rotate(45deg);
+        }
+
+        .dark-mode {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .dark-mode.note-bubble {
+            background: #2d2d2d;
+        }
+
+        .dark-mode.note-bubble::before {
+            background: #2d2d2d;
+        }
+
+        /* 新增用户切换样式 */
+        .user-card {
+            transition: all 0.3s ease;
+            /* 添加过渡属性 */
+            border: 2px solid transparent;
+            background-color: transparent;
+        }
+
+        .user-card.active {
+            border: 2px solid #4F46E5;
+            background-color: #f0f2ff;
+        }
+
+        .dark-mode.user-card.active {
+            background-color: #2d2d4d;
+        }
+
+        /* 新增导出按钮动画 */
+        .export-pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .animate-shake {
+            animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        @keyframes shake {
+
+            10%,
+            90% {
+                transform: translateX(-1px);
+            }
+
+            20%,
+            80% {
+                transform: translateX(2px);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translateX(-4px);
+            }
+
+            40%,
+            60% {
+                transform: translateX(4px);
+            }
+        }
+
+        .animate-pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(0.95);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* 签到动画 */
+        .habit-btn.signed {
+            transform: scale(0.95);
+            animation: signed-bounce 0.6s ease;
+        }
+
+        @keyframes signed-bounce {
+            0% {
+                transform: scale(1);
+            }
+
+            30% {
+                transform: scale(0.9);
+            }
+
+            60% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(0.95);
+            }
+        }
+
+        /* 日历统计 */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .habit-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin: 1px;
+        }
+
+        .active-day {
+            background: #4F46E5;
+            color: white;
+        }
+
+        /* 增强签到按钮反馈 */
+        .habit-btn.signed {
+            position: relative;
+            opacity: 0.8;
+            transform: scale(0.98);
+            transition: all 0.3s ease;
+        }
+
+        .habit-btn.signed::after {
+            content: "✓";
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+            color: #10B981;
+            text-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+        }
+
+        .habit-btn:disabled {
+            cursor: not-allowed;
+            filter: grayscale(0.3);
+        }
+
+        /* 头像样式 */
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        /* 修复夜间模式样式 */
+    .dark-mode {
+        background-color: #1a1a1a;
+        color: #e5e7eb;
+    }
+
+    .dark-mode nav {
+        background-color: #2d2d2d !important;
+        border-bottom: 1px solid #3d3d3d;
+    }
+
+    .dark-mode .user-card {
+        background-color: #2d2d2d !important;
+        color: #e5e7eb;
+    }
+
+    .dark-mode .user-card.active {
+        border-color: #6366f1;
+        background-color: #37376d !important;
+    }
+
+    .dark-mode .habit-btn {
+        color: #e5e7eb !important;
+    }
+
+    .dark-mode .habit-btn[data-habit="跑步"] {
+        background-color: #1e3a8a;
+    }
+
+    .dark-mode .habit-btn[data-habit="跳绳"] {
+        background-color: #166534;
+    }
+
+    .dark-mode .habit-btn[data-habit="阅读"] {
+        background-color: #4c1d95;
+    }
+
+    .dark-mode .habit-btn[data-habit="绘画"] {
+        background-color: #831843;
+    }
+
+    .dark-mode #noteInput {
+        background-color: #2d2d2d;
+        border-color: #3d3d3d;
+        color: #e5e7eb;
+    }
+
+    .dark-mode .note-bubble {
+        background-color: #2d2d2d;
+        color: #e5e7eb;
+    }
+
+    .dark-mode .calendar-day {
+        background-color: #2d2d2d !important;
+        color: #e5e7eb;
+    }
+
+    .dark-mode .calendar-day.active-day {
+        background-color: #6366f1 !important;
+    }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+    <div class="max-w-md mx-auto pb-24 relative min-h-screen">
+        <!-- 顶部导航栏 -->
+        <nav class="bg-white shadow-md fixed top-0 w-full z-50 px-4 py-3 flex items-center justify-between">
+            <div class="w-10 h-10 flex items-center justify-center cursor-pointer" id="themeToggle">
+                <i class="ri-moon-line ri-xl text-gray-600"></i>
+            </div>
+            <h1 class="text-xl font-['Pacifico'] text-primary">生活规律签到</h1>
+            <div class="flex gap-2">
+                <div class="w-10 h-10 flex items-center justify-center cursor-pointer" id="exportData">
+                    <i class="ri-download-line ri-xl text-gray-600"></i>
+                </div>
+                <div class="w-10 h-10 flex items-center justify-center cursor-pointer" id="syncButton">
+                    <i class="ri-refresh-line ri-xl text-gray-600"></i>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主要内容区域 -->
+        <div class="pt-16 px-4">
+            <!-- 用户切换 -->
+            <div class="flex gap-4 mt-4">
+                <div class="user-card active flex-1 bg-white rounded-lg shadow-md p-3 cursor-pointer" data-user="1">
+                    <div class="flex items-center gap-3">
+                        <!-- 替换为用户头像 -->
+                        <img src="1.jpg" alt="用户1头像" class="user-avatar">
+                        <div>
+                            <h3 class="font-medium">用户1</h3>
+                            <div class="text-xs text-gray-500">
+                                连续签到 <span class="streak-days">0</span> 天
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-card flex-1 bg-white rounded-lg shadow-md p-3 cursor-pointer" data-user="2">
+                    <div class="flex items-center gap-3">
+                        <!-- 替换为用户头像 -->
+                        <img src="2.jpg" alt="用户2头像" class="user-avatar">
+                        <div>
+                            <h3 class="font-medium">用户2</h3>
+                            <div class="text-xs text-gray-500">
+                                连续签到 <span class="streak-days">0</span> 天
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 习惯签到 -->
+            <div class="mt-6 bg-white rounded-lg shadow-md p-4">
+                <h2 class="text-lg font-medium mb-3">今日签到</h2>
+                <div class="grid grid-cols-2 gap-2" id="habitButtons">
+                    <button class="habit-btn bg-blue-100 text-blue-800 py-3 rounded-lg" data-habit="跑步">
+                        <i class="ri-run-line"></i> 跑步
+                    </button>
+                    <button class="habit-btn bg-green-100 text-green-800 py-3 rounded-lg" data-habit="跳绳">
+                        <i class="ri-jump-line"></i> 跳绳
+                    </button>
+                    <button class="habit-btn bg-purple-100 text-purple-800 py-3 rounded-lg" data-habit="阅读">
+                        <i class="ri-book-line"></i> 阅读
+                    </button>
+                    <button class="habit-btn bg-pink-100 text-pink-800 py-3 rounded-lg" data-habit="绘画">
+                        <i class="ri-brush-line"></i> 绘画
+                    </button>
+                </div>
+            </div>
+
+            <!-- 随手记 -->
+            <div class="mt-6 bg-white rounded-lg shadow-md p-4">
+                <h2 class="text-lg font-medium mb-3">随手记录</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="noteInput" class="flex-1 px-3 py-2 border rounded-lg" placeholder="记录你的想法...">
+                    <button id="addNoteBtn" class="bg-primary text-white px-4 py-2 rounded-lg">
+                        添加
+                    </button>
+                </div>
+                <div id="notesContainer" class="mt-3 space-y-2"></div>
+            </div>
+        </div>
+        <div id="statisticsPanel" class="hidden mt-6 bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-medium">签到日历</h2>
+                <div class="flex items-center gap-2">
+                    <button id="prevMonth" class="p-1 hover:bg-gray-100 rounded">
+                        <i class="ri-arrow-left-s-line"></i>
+                    </button>
+                    <span id="currentMonth" class="font-medium">2023-12</span>
+                    <button id="nextMonth" class="p-1 hover:bg-gray-100 rounded">
+                        <i class="ri-arrow-right-s-line"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="calendar-grid" id="calendarContainer"></div>
+        </div>
+
+        <!-- 底部标签栏 -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 px-4 py-2 flex justify-around">
+            <div class="flex flex-col items-center text-primary">
+                <i class="ri-home-5-line"></i>
+                <span class="text-xs mt-1">首页</span>
+            </div>
+            <div class="flex flex-col items-center text-gray-500" id="statisticsBtn">
+                <i class="ri-bar-chart-line"></i>
+                <span class="text-xs mt-1">统计</span>
+            </div>
+            <div class="flex flex-col items-center text-gray-500">
+                <i class="ri-settings-3-line"></i>
+                <span class="text-xs mt-1">设置</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let appData;
+        let GITHUB_CONFIG = {
+            owner: '',
+            repo: '',
+            token: '',
+            filePath: 'habit_data.json'
+        };
+        // GitHub同步功能实现
+        const uploadToGitHub = async () => {
+            const content = btoa(JSON.stringify(appData));
+            const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.filePath}`;
+
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${GITHUB_CONFIG.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: 'Update habit data',
+                    content: content,
+                    sha: await getFileSHA()
+                })
+            });
+
+            if (!response.ok) throw new Error('同步失败');
+        };
+
+        const getFileSHA = async () => {
+            const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.filePath}`;
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${GITHUB_CONFIG.token}`
+                }
+            });
+            if (response.status === 404) return null;
+            const data = await response.json();
+            return data.sha;
+        };
+
+        // 导出数据功能
+        const exportData = () => {
+            const dataStr = JSON.stringify(appData, null, 2);
+            const blob = new Blob([dataStr], {
+                type: 'application/json'
+            });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `habit_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        };
+        // 初始化数据
+        const initData = {
+            currentUser: 1,
+            users: {
+                1: {
+                    habits: {
+                        跑步: [],
+                        跳绳: [],
+                        阅读: [],
+                        绘画: []
+                    },
+                    notes: [],
+                    streak: 0
+                },
+                2: {
+                    habits: {
+                        跑步: [],
+                        跳绳: [],
+                        阅读: [],
+                        绘画: []
+                    },
+                    notes: [],
+                    streak: 0
+                }
+            }
+        };
+
+        // 日期处理
+        const getToday = () => {
+            const now = new Date();
+            // 转换为本地时区日期
+            return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                .toISOString()
+                .split('T')[0];
+        };
+
+        // 保存数据
+        const saveData = () => {
+            localStorage.setItem('habitTracker', JSON.stringify(appData));
+        };
+
+        // 更新界面
+        const updateUI = () => {
+            if (!appData) return; // 添加这一行，确保 appData 已经被初始化
+            const today = getToday();
+            const user = appData.users[appData.currentUser];
+
+            // 更新签到按钮状态
+            document.querySelectorAll('#habitButtons button').forEach(btn => {
+                const habit = btn.dataset.habit;
+                const signed = user.habits[habit]?.includes(today) || false;
+                btn.classList.toggle('signed', signed);
+                btn.disabled = signed;
+                btn.style.opacity = signed ? 0.7 : 1;
+            });
+
+            // 更新连续签到
+            document.querySelectorAll('.streak-days').forEach(span => {
+                const user = appData.users[appData.currentUser];
+                span.textContent = user.streak;
+            });
+
+            // 更新随手记
+            const notesContainer = document.getElementById('notesContainer');
+            notesContainer.innerHTML = appData.users[appData.currentUser].notes.map(note => `
+                <div class="note-bubble p-3">
+                    <div class="text-sm">${note.text}</div>
+                    <div class="text-xs text-gray-500 mt-1">${note.time}</div>
+                </div>
+            `).join('');
+        };
+
+        // 修复后的连续签到计算
+        const updateStreak = (user) => {
+            const dates = Object.values(user.habits)
+                .flat()
+                .sort()
+                .filter((v, i, a) => a.indexOf(v) === i); // 去重
+
+            let streak = 0;
+            let currentDate = new Date();
+
+            while (true) {
+                const dateStr = currentDate.toISOString().split('T')[0];
+                if (dates.includes(dateStr)) {
+                    streak++;
+                    currentDate.setDate(currentDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+
+            user.streak = streak;
+        };
+
+        // 添加缺失的GitHub配置对话框函数
+        const showAuthConfigDialog = () => {
+            Swal.fire({
+                title: 'GitHub 配置',
+                html: `
+                    <input id="githubRepo" class="swal2-input" 
+                           placeholder="用户名/仓库名 (例: yourname/repo)"
+                           pattern="[^/]+/[^/]+" required>
+                    <input id="githubToken" class="swal2-input" 
+                           type="password" placeholder="个人访问令牌" required>
+                    <input id="filePath" class="swal2-input" 
+                           placeholder="文件路径 (例: data/habits.json)"
+                           value="${GITHUB_CONFIG.filePath}">
+                    <p class="text-sm text-gray-500 mt-2">
+                        需要创建有repo权限的
+                        <a href="https://github.com/settings/tokens" target="_blank" 
+                           class="text-primary underline">
+                            GitHub访问令牌
+                        </a>
+                    </p>
+                `,
+                focusConfirm: false,
+                preConfirm: () => {
+                    const repoInput = document.getElementById('githubRepo').value;
+                    const [owner, repo] = repoInput.split('/');
+                    if (!owner || !repo) {
+                        Swal.showValidationMessage('仓库格式应为：用户名/仓库名');
+                        return false;
+                    }
+                    return {
+                        owner: owner,
+                        repo: repo,
+                        token: document.getElementById('githubToken').value,
+                        filePath: document.getElementById('filePath').value || 'habit_data.json'
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Object.assign(GITHUB_CONFIG, result.value);
+                    Swal.fire('配置已保存', '正在尝试同步...', 'success');
+                    syncWithGitHub();
+                }
+            });
+        };
+
+        // 增强的签到处理（添加边界情况处理）
+        const signHabit = (habit) => {
+            try {
+                const user = appData.users[appData.currentUser];
+                const today = getToday();
+                console.log('尝试签到:', {
+                    habit,
+                    today,
+                    currentUser: appData.currentUser
+                });
+
+                if (!user.habits[habit]) user.habits[habit] = [];
+
+                if (!user.habits[habit].includes(today)) {
+                    console.log('签到条件满足');
+                    user.habits[habit].push(today);
+                    updateStreak(user);
+                    saveData();
+
+                    // 强制刷新UI
+                    setTimeout(() => {
+                        updateUI();
+                        renderCalendar();
+                    }, 100);
+
+                    // 动画效果
+                    const btn = document.querySelector(`[data-habit="${habit}"]`);
+                    btn.style.transform = 'scale(0.9)';
+                    setTimeout(() => {
+                        btn.style.transform = 'scale(1)';
+                        btn.classList.add('signed');
+                    }, 300);
+
+                    // 成功提示
+                    Swal.fire({
+                        icon: 'success',
+                        title: '签到成功!',
+                        text: `${habit} 已完成`,
+                        timer: 1500,
+                        didClose: () => {
+                            btn.style.boxShadow = '0 0 8px rgba(79, 70, 229, 0.3)';
+                            setTimeout(() => btn.style.boxShadow = '', 500);
+                        }
+                    });
+                } else {
+                    console.log('今日已签到');
+                }
+            } catch (error) {
+                console.error('签到错误:', error);
+                Swal.fire('错误', '签到失败，请检查控制台', 'error');
+            }
+        };
+        // 日历统计功能
+        let currentViewDate = new Date();
+
+        const renderCalendar = () => {
+            const user = appData.users[appData.currentUser];
+            const container = document.getElementById('calendarContainer');
+            const monthDisplay = document.getElementById('currentMonth');
+
+            // 设置月份显示
+            monthDisplay.textContent = `${currentViewDate.getFullYear()}-${String(currentViewDate.getMonth() + 1).padStart(2, '0')}`;
+
+            // 生成日期数据
+            const days = [];
+            const date = new Date(currentViewDate);
+            date.setDate(1);
+            date.setDate(1 - date.getDay()); // 从周一开始
+
+            container.innerHTML = '';
+
+            for (let i = 0; i < 42; i++) { // 6周
+                const dayDate = new Date(date);
+                const dayKey = dayDate.toISOString().split('T')[0];
+                const habitsToday = Object.entries(user.habits)
+                    .filter(([_, dates]) => dates.includes(dayKey))
+                    .map(([habit]) => habit);
+
+                const dayElement = document.createElement('div');
+                dayElement.className = `calendar-day ${dayDate.getMonth() === currentViewDate.getMonth()? 'bg-gray-50' : 'bg-gray-100'} 
+                    ${dayKey === getToday()? 'border-2 border-primary' : ''}`;
+
+                dayElement.innerHTML = `
+                    <div class="text-xs">${dayDate.getDate()}</div>
+                    <div class="absolute bottom-1 flex flex-wrap justify-center" style="width:80%">
+                        ${habitsToday.map(habit => `
+                            <div class="habit-dot 
+                                ${habit === '跑步'? 'bg-blue-500' :
+                                  habit === '跳绳'? 'bg-green-500' :
+                                  habit === '阅读'? 'bg-purple-500' : 'bg-pink-500'}"></div>
+                        `).join('')}
+                    </div>
+                `;
+
+                // 点击查看详情
+                dayElement.addEventListener('click', () => {
+                    if (habitsToday.length > 0) {
+                        Swal.fire({
+                            title: `${dayKey} 签到记录`,
+                            html: habitsToday.map(h => `<div class="text-lg">✓ ${h}</div>`).join(''),
+                            confirmButtonText: '关闭'
+                        });
+                    }
+                });
+
+                container.appendChild(dayElement);
+                date.setDate(date.getDate() + 1);
+            }
+        };
+
+        // 月份切换事件
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            currentViewDate.setMonth(currentViewDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentViewDate.setMonth(currentViewDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        // 统计面板切换
+        document.getElementById('statisticsBtn').addEventListener('click', () => {
+            const panel = document.getElementById('statisticsPanel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                renderCalendar();
+            }
+        });
+
+        // 初始化时隐藏统计面板
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化夜间模式
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.body.classList.toggle('dark-mode', savedTheme === 'dark');
+        document.getElementById('themeToggle').addEventListener('click', () => {
+        const isDark = document.body.classList.toggle('dark-mode');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        
+        const themeIcon = document.getElementById('themeToggle').querySelector('i');
+        themeIcon.className = isDark ? 
+            'ri-sun-line ri-xl text-gray-300' : 
+            'ri-moon-line ri-xl text-gray-600';
+    });
+            document.getElementById('statisticsPanel').classList.add('hidden');
+
+            // 从localStorage加载数据
+            appData = localStorage.getItem('habitTracker') ?
+                JSON.parse(localStorage.getItem('habitTracker')) :
+                JSON.parse(JSON.stringify(initData));
+
+            // 正确获取当前用户数据
+            const user = appData.users[appData.currentUser];
+            const today = getToday();
+
+            // 初始化按钮状态
+            document.querySelectorAll('#habitButtons button').forEach(btn => {
+                const habit = btn.dataset.habit;
+                const signed = user.habits[habit]?.includes(today) || false;
+                btn.classList.toggle('signed', signed);
+                btn.disabled = signed;
+                btn.style.opacity = signed ? 0.7 : 1;
+            });
+        });
+
+        // 增强的随手记功能
+        document.getElementById('addNoteBtn').addEventListener('click', () => {
+            try {
+                const input = document.getElementById('noteInput');
+                const text = input.value.trim();
+
+                if (!text) {
+                    input.classList.add('animate-shake');
+                    setTimeout(() => input.classList.remove('animate-shake'), 500);
+                    return Swal.fire('内容为空', '请输入有效的记录内容', 'warning');
+                }
+
+                addNote(text);
+                input.value = '';
+
+                // 添加输入框确认动画
+                input.parentElement.classList.add('ring-2', 'ring-primary');
+                setTimeout(() => {
+                    input.parentElement.classList.remove('ring-2', 'ring-primary');
+                }, 300);
+            } catch (error) {
+                console.error('添加笔记失败:', error);
+                Swal.fire('操作失败', '无法保存笔记', 'error');
+            }
+        });
+
+        // 添加随手记
+        const addNote = (text) => {
+            const user = appData.users[appData.currentUser];
+            user.notes.unshift({
+                text: text,
+                time: new Date().toLocaleTimeString('zh-CN', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            });
+            saveData();
+            updateUI();
+        };
+
+        // GitHub同步（同之前代码，略作修改）
+        const syncWithGitHub = async () => {
+            try {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+
+                await Toast.fire({
+                    title: '正在启动同步...'
+                });
+                await uploadToGitHub();
+
+                Swal.fire('同步成功', '数据已上传至GitHub', 'success');
+            } catch (error) {
+                console.error('同步失败:', error);
+                Swal.fire('同步失败', error.message || '请检查配置和网络', 'error');
+            }
+        };
+
+        // 初始化
+        // 增强的初始化函数
+        document.addEventListener('DOMContentLoaded', () => {
+            // 从localStorage加载数据
+            appData = localStorage.getItem('habitTracker') ?
+                JSON.parse(localStorage.getItem('habitTracker')) :
+                JSON.parse(JSON.stringify(initData));
+
+            // 绑定导出按钮
+            document.getElementById('exportData').addEventListener('click', () => {
+                exportData();
+                const icon = document.getElementById('exportData').querySelector('i');
+                icon.classList.add('export-pulse');
+                setTimeout(() => icon.classList.remove('export-pulse'), 1500);
+                Swal.fire('导出成功', '数据文件已开始下载', 'success');
+            });
+
+            // 绑定同步按钮
+            document.getElementById('syncButton').addEventListener('click', () => {
+                if (!GITHUB_CONFIG.token) {
+                    showAuthConfigDialog();
+                } else {
+                    syncWithGitHub();
+                }
+            });
+
+            // 增强的用户切换
+            // 在用户切换时强制刷新数据
+            document.querySelectorAll('.user-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    appData.currentUser = parseInt(card.dataset.user);
+                    // 清除旧事件监听
+                    document.querySelectorAll('#habitButtons button').forEach(btn => {
+                        btn.replaceWith(btn.cloneNode(true));
+                    });
+                    // 重新绑定事件
+                    document.querySelectorAll('#habitButtons button').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            signHabit(btn.dataset.habit);
+                        });
+                    });
+                    // 切换用户时添加动画效果
+                    document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    updateUI();
+                });
+            });
+
+            // 回车键提交随手记
+            document.getElementById('noteInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('addNoteBtn').click();
+                }
+            });
+
+            updateUI();
+        });
+    </script>
+</body>
+
+</html>

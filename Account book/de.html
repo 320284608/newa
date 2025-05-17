@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人生活记账系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .category-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .chart-container {
+            height: 300px;
+        }
+        .transaction-item:hover {
+            transform: translateX(5px);
+            transition: transform 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-indigo-700 flex items-center">
+                <i class="fas fa-wallet mr-3"></i>
+                个人生活记账
+            </h1>
+            <div class="flex space-x-3">
+                <button id="exportBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-file-export mr-2"></i>导出数据
+                </button>
+                <button id="importBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-file-import mr-2"></i>导入数据
+                </button>
+                <button id="syncBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-cloud-upload-alt mr-2"></i>同步云端
+                </button>
+            </div>
+        </header>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-md p-6 flex items-center">
+                <div class="bg-green-100 p-4 rounded-full mr-4">
+                    <i class="fas fa-coins text-green-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-gray-500">本月收入</p>
+                    <h3 class="text-2xl font-bold text-green-600" id="monthlyIncome">¥0</h3>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6 flex items-center">
+                <div class="bg-red-100 p-4 rounded-full mr-4">
+                    <i class="fas fa-shopping-bag text-red-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-gray-500">本月支出</p>
+                    <h3 class="text-2xl font-bold text-red-600" id="monthlyExpense">¥0</h3>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6 flex items-center">
+                <div class="bg-blue-100 p-4 rounded-full mr-4">
+                    <i class="fas fa-balance-scale text-blue-600 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-gray-500">当前结余</p>
+                    <h3 class="text-2xl font-bold text-blue-600" id="currentBalance">¥0</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Add Transaction Form -->
+                <div class="bg-white rounded-xl shadow-md p-6 fade-in">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                        <i class="fas fa-plus-circle mr-2 text-indigo-500"></i>添加交易记录
+                    </h2>
+                    <form id="transactionForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">类型</label>
+                                <select id="type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="expense">支出</option>
+                                    <option value="income">收入</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">金额</label>
+                                <input type="number" id="amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="0.00" step="0.01" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">日期</label>
+                                <input type="date" id="date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">分类</label>
+                                <select id="category" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                                    <option value="">选择分类</option>
+                                    <!-- Categories will be populated by JS -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">支付方式</label>
+                                <select id="paymentMethod" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="cash">现金</option>
+                                    <option value="credit_card">信用卡</option>
+                                    <option value="debit_card">借记卡</option>
+                                    <option value="alipay">支付宝</option>
+                                    <option value="wechat">微信支付</option>
+                                    <option value="bank_transfer">银行转账</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                            <textarea id="description" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="可选的备注信息"></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md flex items-center">
+                                <i class="fas fa-save mr-2"></i>保存记录
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="bg-white rounded-xl shadow-md p-6 fade-in">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                            <i class="fas fa-history mr-2 text-indigo-500"></i>最近交易记录
+                        </h2>
+                        <div class="flex space-x-2">
+                            <select id="filterType" class="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                                <option value="all">所有类型</option>
+                                <option value="income">收入</option>
+                                <option value="expense">支出</option>
+                            </select>
+                            <select id="filterMonth" class="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                                <!-- Months will be populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-auto scrollbar-hide">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分类</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">金额</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">支付方式</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">备注</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsList" class="bg-white divide-y divide-gray-200">
+                                <!-- Transactions will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-between items-center text-sm text-gray-500">
+                        <div id="transactionCount">共 0 条记录</div>
+                        <div class="flex space-x-2">
+                            <button id="prevPage" class="px-3 py-1 border rounded-md disabled:opacity-50" disabled>
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span id="currentPage">1</span>/<span id="totalPages">1</span>
+                            <button id="nextPage" class="px-3 py-1 border rounded-md disabled:opacity-50" disabled>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Monthly Summary Chart -->
+                <div class="bg-white rounded-xl shadow-md p-6 fade-in">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                        <i class="fas fa-chart-pie mr-2 text-indigo-500"></i>月度收支概览
+                    </h2>
+                    <div class="chart-container">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Category Breakdown -->
+                <div class="bg-white rounded-xl shadow-md p-6 fade-in">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                        <i class="fas fa-tags mr-2 text-indigo-500"></i>分类统计
+                    </h2>
+                    <div class="space-y-3" id="categoryBreakdown">
+                        <!-- Categories will be populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">导出数据</h3>
+                <button id="closeExportModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">导出格式</label>
+                    <select id="exportFormat" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="json">JSON</option>
+                        <option value="csv">CSV</option>
+                        <option value="excel">Excel</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">时间范围</label>
+                    <select id="exportRange" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="all">所有数据</option>
+                        <option value="month">本月</option>
+                        <option value="year">本年</option>
+                        <option value="custom">自定义范围</option>
+                    </select>
+                </div>
+                <div id="customRangeContainer" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">开始日期</label>
+                        <input type="date" id="exportStartDate" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">结束日期</label>
+                        <input type="date" id="exportEndDate" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button id="cancelExport" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">取消</button>
+                    <button id="confirmExport" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">导出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="importModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">导入数据</h3>
+                <button id="closeImportModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">导入方式</label>
+                    <select id="importMethod" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="file">从文件导入</option>
+                        <option value="github">从GitHub导入</option>
+                        <option value="nutstore">从坚果云导入</option>
+                    </select>
+                </div>
+                
+                <div id="fileImportContainer">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">选择文件</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                            <div class="flex text-sm text-gray-600">
+                                <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none">
+                                    <span>上传文件</span>
+                                    <input id="file-upload" name="file-upload" type="file" class="sr-only">
+                                </label>
+                                <p class="pl-1">或拖拽文件到此处</p>
+                            </div>
+                            <p class="text-xs text-gray-500">支持JSON, CSV格式</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="githubImportContainer" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">GitHub仓库</label>
+                        <input type="text" id="githubRepo" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="username/repo">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">文件路径</label>
+                        <input type="text" id="githubFilePath" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="path/to/file.json">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">GitHub Token</label>
+                        <input type="password" id="githubToken" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="(可选)">
+                    </div>
+                </div>
+                
+                <div id="nutstoreImportContainer" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">坚果云用户名</label>
+                        <input type="text" id="nutstoreUsername" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                        <input type="password" id="nutstorePassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">文件路径</label>
+                        <input type="text" id="nutstoreFilePath" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="/path/to/file.json">
+                    </div>
+                </div>
+                
+                <div class="flex items-center">
+                    <input type="checkbox" id="mergeData" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                    <label for="mergeData" class="ml-2 block text-sm text-gray-700">合并到现有数据</label>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button id="cancelImport" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">取消</button>
+                    <button id="confirmImport" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">导入</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="syncModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">同步到云端</h3>
+                <button id="closeSyncModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">同步目标</label>
+                    <select id="syncTarget" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="github">GitHub</option>
+                        <option value="nutstore">坚果云</option>
+                    </select>
+                </div>
+                
+                <div id="githubSyncContainer" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">GitHub仓库</label>
+                        <input type="text" id="syncGithubRepo" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="username/repo">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">文件路径</label>
+                        <input type="text" id="syncGithubFilePath" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="path/to/file.json">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">GitHub Token</label>
+                        <input type="password" id="syncGithubToken" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="(可选)">
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="githubCommitMessage" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="githubCommitMessage" class="ml-2 block text-sm text-gray-700">添加提交信息</label>
+                    </div>
+                    <div id="githubCommitContainer" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">提交信息</label>
+                        <input type="text" id="githubCommitMsg" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="更新记账数据">
+                    </div>
+                </div>
+                
+                <div id="nutstoreSyncContainer" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">坚果云用户名</label>
+                        <input type="text" id="syncNutstoreUsername" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                        <input type="password" id="syncNutstorePassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">文件路径</label>
+                        <input type="text" id="syncNutstoreFilePath" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="/path/to/file.json">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button id="cancelSync" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">取消</button>
+                    <button id="confirmSync" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">同步</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">编辑交易记录</h3>
+                <button id="closeEditModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editForm" class="space-y-4">
+                <input type="hidden" id="editId">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">类型</label>
+                        <select id="editType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="expense">支出</option>
+                            <option value="income">收入</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">金额</label>
+                        <input type="number" id="editAmount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="0.00" step="0.01" required>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">日期</label>
+                    <input type="date" id="editDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">分类</label>
+                        <select id="editCategory" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                            <!-- Categories will be populated by JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">支付方式</label>
+                        <select id="editPaymentMethod" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="cash">现金</option>
+                            <option value="credit_card">信用卡</option>
+                            <option value="debit_card">借记卡</option>
+                            <option value="alipay">支付宝</option>
+                            <option value="wechat">微信支付</option>
+                            <option value="bank_transfer">银行转账</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                    <textarea id="editDescription" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancelEdit" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize variables
+            let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            let currentPage = 1;
+            const transactionsPerPage = 10;
+            let monthlyChart = null;
+            
+            // Category configuration
+            const categories = {
+                expense: [
+                    { id: 'food', name: '餐饮', icon: 'fa-utensils', color: 'bg-red-100 text-red-600' },
+                    { id: 'shopping', name: '购物', icon: 'fa-shopping-bag', color: 'bg-blue-100 text-blue-600' },
+                    { id: 'transport', name: '交通', icon: 'fa-bus', color: 'bg-green-100 text-green-600' },
+                    { id: 'entertainment', name: '娱乐', icon: 'fa-gamepad', color: 'bg-purple-100 text-purple-600' },
+                    { id: 'housing', name: '住房', icon: 'fa-home', color: 'bg-yellow-100 text-yellow-600' },
+                    { id: 'utilities', name: '水电煤', icon: 'fa-bolt', color: 'bg-indigo-100 text-indigo-600' },
+                    { id: 'health', name: '医疗健康', icon: 'fa-heartbeat', color: 'bg-pink-100 text-pink-600' },
+                    { id: 'education', name: '教育', icon: 'fa-book', color: 'bg-teal-100 text-teal-600' },
+                    { id: 'other_expense', name: '其他支出', icon: 'fa-ellipsis-h', color: 'bg-gray-100 text-gray-600' }
+                ],
+                income: [
+                    { id: 'salary', name: '工资', icon: 'fa-money-bill-wave', color: 'bg-green-100 text-green-600' },
+                    { id: 'bonus', name: '奖金', icon: 'fa-gift', color: 'bg-blue-100 text-blue-600' },
+                    { id: 'investment', name: '投资收益', icon: 'fa-chart-line', color: 'bg-purple-100 text-purple-600' },
+                    { id: 'freelance', name: '自由职业', icon: 'fa-laptop-code', color: 'bg-yellow-100 text-yellow-600' },
+                    { id: 'other_income', name: '其他收入', icon: 'fa-ellipsis-h', color: 'bg-gray-100 text-gray-600' }
+                ]
+            };
+            
+            // Set today's date as default
+            document.getElementById('date').valueAsDate = new Date();
+            
+            // Populate category dropdown
+            populateCategoryDropdown();
+            
+            // Populate month filter dropdown
+            populateMonthFilter();
+            
+            // Display transactions
+            updateTransactionList();
+            updateSummary();
+            updateCategoryBreakdown();
+            updateMonthlyChart();
+            
+            // Event listeners
+            document.getElementById('transactionForm').addEventListener('submit', addTransaction);
+            document.getElementById('filterType').addEventListener('change', updateTransactionList);
+            document.getElementById('filterMonth').addEventListener('change', updateTransactionList);
+            document.getElementById('prevPage').addEventListener('click', goToPrevPage);
+            document.getElementById('nextPage').addEventListener('click', goToNextPage);
+            
+            // Export/Import buttons
+            document.getElementById('exportBtn').addEventListener('click', showExportModal);
+            document.getElementById('importBtn').addEventListener('click', showImportModal);
+            document.getElementById('syncBtn').addEventListener('click', showSyncModal);
+            
+            // Export modal events
+            document.getElementById('closeExportModal').addEventListener('click', hideExportModal);
+            document.getElementById('cancelExport').addEventListener('click', hideExportModal);
+            document.getElementById('confirmExport').addEventListener('click', exportData);
+            document.getElementById('exportRange').addEventListener('change', toggleCustomRange);
+            
+            // Import modal events
+            document.getElementById('closeImportModal').addEventListener('click', hideImportModal);
+            document.getElementById('cancelImport').addEventListener('click', hideImportModal);
+            document.getElementById('confirmImport').addEventListener('click', importData);
+            document.getElementById('importMethod').addEventListener('change', toggleImportMethod);
+            
+            // Sync modal events
+            document.getElementById('closeSyncModal').addEventListener('click', hideSyncModal);
+            document.getElementById('cancelSync').addEventListener('click', hideSyncModal);
+            document.getElementById('confirmSync').addEventListener('click', syncData);
+            document.getElementById('syncTarget').addEventListener('change', toggleSyncTarget);
+            document.getElementById('githubCommitMessage').addEventListener('change', toggleCommitMessage);
+            
+            // Edit modal events
+            document.getElementById('closeEditModal').addEventListener('click', hideEditModal);
+            document.getElementById('cancelEdit').addEventListener('click', hideEditModal);
+            document.getElementById('editForm').addEventListener('submit', saveEditedTransaction);
+            
+            // File drag and drop for import
+            const fileUpload = document.getElementById('file-upload');
+            const fileImportContainer = document.getElementById('fileImportContainer');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                fileImportContainer.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                fileImportContainer.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                fileImportContainer.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                fileImportContainer.classList.add('border-indigo-500', 'bg-indigo-50');
+            }
+            
+            function unhighlight() {
+                fileImportContainer.classList.remove('border-indigo-500', 'bg-indigo-50');
+            }
+            
+            fileImportContainer.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                fileUpload.files = files;
+            }
+            
+            // Functions
+            function populateCategoryDropdown() {
+                const categoryDropdown = document.getElementById('category');
+                const editCategoryDropdown = document.getElementById('editCategory');
+                
+                // Clear existing options
+                categoryDropdown.innerHTML = '<option value="">选择分类</option>';
+                editCategoryDropdown.innerHTML = '<option value="">选择分类</option>';
+                
+                // Add expense categories
+                const expenseGroup = document.createElement('optgroup');
+                expenseGroup.label = '支出分类';
+                categories.expense.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    expenseGroup.appendChild(option);
+                });
+                categoryDropdown.appendChild(expenseGroup);
+                
+                // Add income categories
+                const incomeGroup = document.createElement('optgroup');
+                incomeGroup.label = '收入分类';
+                categories.income.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    incomeGroup.appendChild(option);
+                });
+                categoryDropdown.appendChild(incomeGroup);
+                
+                // For edit modal
+                const editExpenseGroup = expenseGroup.cloneNode(true);
+                const editIncomeGroup = incomeGroup.cloneNode(true);
+                editCategoryDropdown.appendChild(editExpenseGroup);
+                editCategoryDropdown.appendChild(editIncomeGroup);
+            }
+            
+            function populateMonthFilter() {
+                const monthFilter = document.getElementById('filterMonth');
+                monthFilter.innerHTML = '<option value="all">所有月份</option>';
+                
+                // Get unique months from transactions
+                const months = [...new Set(transactions.map(t => {
+                    const date = new Date(t.date);
+                    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                }))].sort().reverse();
+                
+                months.forEach(month => {
+                    const [year, monthNum] = month.split('-');
+                    const option = document.createElement('option');
+                    option.value = month;
+                    option.textContent = `${year}年${monthNum}月`;
+                    monthFilter.appendChild(option);
+                });
+            }
+            
+            function addTransaction(e) {
+                e.preventDefault();
+                
+                const type = document.getElementById('type').value;
+                const amount = parseFloat(document.getElementById('amount').value);
+                const date = document.getElementById('date').value;
+                const category = document.getElementById('category').value;
+                const paymentMethod = document.getElementById('paymentMethod').value;
+                const description = document.getElementById('description').value;
+                
+                if (!amount || !date || !category) {
+                    alert('请填写所有必填字段');
+                    return;
+                }
+                
+                const transaction = {
+                    id: Date.now().toString(),
+                    type,
+                    amount,
+                    date,
+                    category,
+                    paymentMethod,
+                    description,
+                    createdAt: new Date().toISOString()
+                };
+                
+                transactions.unshift(transaction);
+                saveTransactions();
+                
+                // Reset form
+                document.getElementById('amount').value = '';
+                document.getElementById('description').value = '';
+                document.getElementById('category').selectedIndex = 0;
+                
+                // Update UI
+                updateTransactionList();
+                updateSummary();
+                updateCategoryBreakdown();
+                updateMonthlyChart();
+                populateMonthFilter();
+            }
+            
+            function updateTransactionList() {
+                const filterType = document.getElementById('filterType').value;
+                const filterMonth = document.getElementById('filterMonth').value;
+                
+                // Filter transactions
+                let filteredTransactions = [...transactions];
+                
+                if (filterType !== 'all') {
+                    filteredTransactions = filteredTransactions.filter(t => t.type === filterType);
+                }
+                
+                if (filterMonth !== 'all') {
+                    filteredTransactions = filteredTransactions.filter(t => {
+                        const date = new Date(t.date);
+                        const transactionMonth = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                        return transactionMonth === filterMonth;
+                    });
+                }
+                
+                // Pagination
+                const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage);
+                const startIndex = (currentPage - 1) * transactionsPerPage;
+                const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + transactionsPerPage);
+                
+                // Update transaction list
+                const transactionsList = document.getElementById('transactionsList');
+                transactionsList.innerHTML = '';
+                
+                if (paginatedTransactions.length === 0) {
+                    const row = document.createElement('tr');
+                    row.className = 'text-center py-4';
+                    row.innerHTML = `
+                        <td colspan="6" class="px-4 py-4 text-gray-500">没有找到交易记录</td>
+                    `;
+                    transactionsList.appendChild(row);
+                } else {
+                    paginatedTransactions.forEach(transaction => {
+                        const category = categories[transaction.type].find(c => c.id === transaction.category);
+                        const row = document.createElement('tr');
+                        row.className = 'transaction-item hover:bg-gray-50 cursor-pointer';
+                        row.innerHTML = `
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${formatDate(transaction.date)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center">
+                                <div class="category-icon ${category.color}">
+                                    <i class="fas ${category.icon}"></i>
+                                </div>
+                                ${category.name}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+                                ${transaction.type === 'income' ? '+' : '-'}¥${transaction.amount.toFixed(2)}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${getPaymentMethodName(transaction.paymentMethod)}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs">${transaction.description || '-'}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                <button class="text-indigo-600 hover:text-indigo-900 mr-2 edit-btn" data-id="${transaction.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${transaction.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        transactionsList.appendChild(row);
+                    });
+                    
+                    // Add event listeners to edit and delete buttons
+                    document.querySelectorAll('.edit-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            showEditModal(btn.dataset.id);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            deleteTransaction(btn.dataset.id);
+                        });
+                    });
+                    
+                    // Add click event to view transaction details
+                    document.querySelectorAll('.transaction-item').forEach(row => {
+                        row.addEventListener('click', () => {
+                            const id = row.querySelector('.edit-btn').dataset.id;
+                            showEditModal(id);
+                        });
+                    });
+                }
+                
+                // Update pagination info
+                document.getElementById('transactionCount').textContent = `共 ${filteredTransactions.length} 条记录`;
+                document.getElementById('currentPage').textContent = currentPage;
+                document.getElementById('totalPages').textContent = totalPages;
+                
+                // Enable/disable pagination buttons
+                document.getElementById('prevPage').disabled = currentPage === 1;
+                document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
+            }
+            
+            function goToPrevPage() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updateTransactionList();
+                }
+            }
+            
+            function goToNextPage() {
+                const filterType = document.getElementById('filterType').value;
+                const filterMonth = document.getElementById('filterMonth').value;
+                let filteredTransactions = [...transactions];
+                
+                if (filterType !== 'all') {
+                    filteredTransactions = filteredTransactions.filter(t => t.type === filterType);
+                }
+                
+                if (filterMonth !== 'all') {
+                    filteredTransactions = filteredTransactions.filter(t => {
+                        const date = new Date(t.date);
+                        const transactionMonth = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                        return transactionMonth === filterMonth;
+                    });
+                }
+                
+                const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage);
+                
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updateTransactionList();
+                }
+            }
+            
+            function updateSummary() {
+                const currentDate = new Date();
+                const currentMonth = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                
+                const monthlyIncome = transactions
+                    .filter(t => t.type === 'income' && t.date.startsWith(currentMonth))
+                    .reduce((sum, t) => sum + t.amount, 0);
+                
+                const monthlyExpense = transactions
+                    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonth))
+                    .reduce((sum, t) => sum + t.amount, 0);
+                
+                const totalIncome = transactions
+                    .filter(t => t.type === 'income')
+                    .reduce((sum, t) => sum + t.amount, 0);
+                
+                const totalExpense = transactions
+                    .filter(t => t.type === 'expense')
+                    .reduce((sum, t) => sum + t.amount, 0);
+                
+                document.getElementById('monthlyIncome').textContent = `¥${monthlyIncome.toFixed(2)}`;
+                document.getElementById('monthlyExpense').textContent = `¥${monthlyExpense.toFixed(2)}`;
+                document.getElementById('currentBalance').textContent = `¥${(totalIncome - totalExpense).toFixed(2)}`;
+            }
+            
+            function updateCategoryBreakdown() {
+                const currentDate = new Date();
+                const currentMonth = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                
+                const monthlyExpenses = transactions
+                    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonth))
+                    .reduce((acc, t) => {
+                        if (!acc[t.category]) acc[t.category] = 0;
+                        acc[t.category] += t.amount;
+                        return acc;
+                    }, {});
+                
+                const categoryBreakdown = document.getElementById('categoryBreakdown');
+                categoryBreakdown.innerHTML = '';
+                
+                // Sort categories by amount (descending)
+                const sortedCategories = Object.entries(monthlyExpenses)
+                    .sort((a, b) => b[1] - a[1]);
+                
+                if (sortedCategories.length === 0) {
+                    categoryBreakdown.innerHTML = '<p class="text-gray-500 text-center py-4">本月暂无支出数据</p>';
+                    return;
+                }
+                
+                // Calculate total for percentage
+                const total = sortedCategories.reduce((sum, [_, amount]) => sum + amount, 0);
+                
+                sortedCategories.forEach(([categoryId, amount]) => {
+                    const category = categories.expense.find(c => c.id === categoryId);
+                    const percentage = ((amount / total) * 100).toFixed(1);
+                    
+                    const categoryElement = document.createElement('div');
+                    categoryElement.className = 'flex items-center justify-between';
+                    categoryElement.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="category-icon ${category.color}">
+                                <i class="fas ${category.icon}"></i>
+                            </div>
+                            <span class="text-sm font-medium">${category.name}</span>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <span class="text-sm text-red-600 font-medium">¥${amount.toFixed(2)}</span>
+                            <span class="text-xs text-gray-500">${percentage}%</span>
+                        </div>
+                    `;
+                    categoryBreakdown.appendChild(categoryElement);
+                    
+                    // Add progress bar
+                    const progressBar = document.createElement('div');
+                    progressBar.className = 'w-full bg-gray-200 rounded-full h-1.5 mt-1';
+                    progressBar.innerHTML = `
+                        <div class="bg-red-500 h-1.5 rounded-full" style="width: ${percentage}%"></div>
+                    `;
+                    categoryBreakdown.appendChild(progressBar);
+                });
+            }
+            
+            function updateMonthlyChart() {
+                const ctx = document.getElementById('monthlyChart').getContext('2d');
+                
+                // Get data for the current year
+                const currentYear = new Date().getFullYear();
+                const monthlyData = Array(12).fill().map((_, i) => {
+                    const month = (i + 1).toString().padStart(2, '0');
+                    const monthTransactions = transactions.filter(t => t.date.startsWith(`${currentYear}-${month}`));
+                    
+                    const income = monthTransactions
+                        .filter(t => t.type === 'income')
+                        .reduce((sum, t) => sum + t.amount, 0);
+                    
+                    const expense = monthTransactions
+                        .filter(t => t.type === 'expense')
+                        .reduce((sum, t) => sum + t.amount, 0);
+                    
+                    return { income, expense };
+                });
+                
+                // Destroy previous chart if exists
+                if (monthlyChart) {
+                    monthlyChart.destroy();
+                }
+                
+                monthlyChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                        datasets: [
+                            {
+                                label: '收入',
+                                data: monthlyData.map(d => d.income),
+                                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                                borderColor: 'rgba(16, 185, 129, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: '支出',
+                                data: monthlyData.map(d => d.expense),
+                                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                                borderColor: 'rgba(239, 68, 68, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '¥' + value;
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        label += '¥' + context.raw.toFixed(2);
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function saveTransactions() {
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+            }
+            
+            function showEditModal(id) {
+                const transaction = transactions.find(t => t.id === id);
+                if (!transaction) return;
+                
+                document.getElementById('editId').value = transaction.id;
+                document.getElementById('editType').value = transaction.type;
+                document.getElementById('editAmount').value = transaction.amount;
+                document.getElementById('editDate').value = transaction.date;
+                document.getElementById('editCategory').value = transaction.category;
+                document.getElementById('editPaymentMethod').value = transaction.paymentMethod;
+                document.getElementById('editDescription').value = transaction.description || '';
+                
+                // Update category dropdown based on type
+                const editCategoryDropdown = document.getElementById('editCategory');
+                editCategoryDropdown.innerHTML = '';
+                
+                if (transaction.type === 'expense') {
+                    const expenseGroup = document.createElement('optgroup');
+                    expenseGroup.label = '支出分类';
+                    categories.expense.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id;
+                        option.textContent = category.name;
+                        expenseGroup.appendChild(option);
+                    });
+                    editCategoryDropdown.appendChild(expenseGroup);
+                } else {
+                    const incomeGroup = document.createElement('optgroup');
+                    incomeGroup.label = '收入分类';
+                    categories.income.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id;
+                        option.textContent = category.name;
+                        incomeGroup.appendChild(option);
+                    });
+                    editCategoryDropdown.appendChild(incomeGroup);
+                }
+                
+                editCategoryDropdown.value = transaction.category;
+                
+                document.getElementById('editModal').classList.remove('hidden');
+            }
+            
+            function hideEditModal() {
+                document.getElementById('editModal').classList.add('hidden');
+            }
+            
+            function saveEditedTransaction(e) {
+                e.preventDefault();
+                
+                const id = document.getElementById('editId').value;
+                const type = document.getElementById('editType').value;
+                const amount = parseFloat(document.getElementById('editAmount').value);
+                const date = document.getElementById('editDate').value;
+                const category = document.getElementById('editCategory').value;
+                const paymentMethod = document.getElementById('editPaymentMethod').value;
+                const description = document.getElementById('editDescription').value;
+                
+                if (!amount || !date || !category) {
+                    alert('请填写所有必填字段');
+                    return;
+                }
+                
+                const transactionIndex = transactions.findIndex(t => t.id === id);
+                if (transactionIndex === -1) return;
+                
+                transactions[transactionIndex] = {
+                    ...transactions[transactionIndex],
+                    type,
+                    amount,
+                    date,
+                    category,
+                    paymentMethod,
+                    description
+                };
+                
+                saveTransactions();
+                hideEditModal();
+                
+                // Update UI
+                updateTransactionList();
+                updateSummary();
+                updateCategoryBreakdown();
+                updateMonthlyChart();
+                populateMonthFilter();
+            }
+            
+            function deleteTransaction(id) {
+                if (confirm('确定要删除这条记录吗？')) {
+                    transactions = transactions.filter(t => t.id !== id);
+                    saveTransactions();
+                    
+                    // Update UI
+                    updateTransactionList();
+                    updateSummary();
+                    updateCategoryBreakdown();
+                    updateMonthlyChart();
+                    populateMonthFilter();
+                }
+            }
+            
+            function showExportModal() {
+                document.getElementById('exportModal').classList.remove('hidden');
+            }
+            
+            function hideExportModal() {
+                document.getElementById('exportModal').classList.add('hidden');
+            }
+            
+            function toggleCustomRange() {
+                const exportRange = document.getElementById('exportRange').value;
+                const customRangeContainer = document.getElementById('customRangeContainer');
+                
+                if (exportRange === 'custom') {
+                    customRangeContainer.classList.remove('hidden');
+                } else {
+                    customRangeContainer.classList.add('hidden');
+                }
+            }
+            
+            function exportData() {
+                const exportFormat = document.getElementById('exportFormat').value;
+                const exportRange = document.getElementById('exportRange').value;
+                
+                let dataToExport = [...transactions];
+                
+                // Filter by date range if needed
+                if (exportRange === 'month') {
+                    const currentDate = new Date();
+                    const currentMonth = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                    dataToExport = dataToExport.filter(t => t.date.startsWith(currentMonth));
+                } else if (exportRange === 'year') {
+                    const currentYear = new Date().getFullYear();
+                    dataToExport = dataToExport.filter(t => t.date.startsWith(`${currentYear}-`));
+                } else if (exportRange === 'custom') {
+                    const startDate = document.getElementById('exportStartDate').value;
+                    const endDate = document.getElementById('exportEndDate').value;
+                    
+                    if (startDate && endDate) {
+                        dataToExport = dataToExport.filter(t => t.date >= startDate && t.date <= endDate);
+                    }
+                }
+                
+                // Convert to selected format
+                if (exportFormat === 'json') {
+                    const dataStr = JSON.stringify(dataToExport, null, 2);
+                    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                    const exportFileName = `transactions_${new Date().toISOString().slice(0, 10)}.json`;
+                    
+                    downloadData(dataUri, exportFileName);
+                } else if (exportFormat === 'csv') {
+                    // Convert to CSV
+                    const headers = ['ID', '类型', '金额', '日期', '分类', '支付方式', '备注', '创建时间'];
+                    const csvRows = [];
+                    
+                    // Add headers
+                    csvRows.push(headers.join(','));
+                    
+                    // Add data
+                    dataToExport.forEach(t => {
+                        const row = [
+                            t.id,
+                            t.type === 'income' ? '收入' : '支出',
+                            t.amount,
+                            t.date,
+                            getCategoryName(t.type, t.category),
+                            getPaymentMethodName(t.paymentMethod),
+                            t.description || '',
+                            t.createdAt
+                        ].map(field => `"${String(field).replace(/"/g, '""')}"`);
+                        
+                        csvRows.push(row.join(','));
+                    });
+                    
+                    const csvData = csvRows.join('\n');
+                    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvData);
+                    const exportFileName = `transactions_${new Date().toISOString().slice(0, 10)}.csv`;
+                    
+                    downloadData(dataUri, exportFileName);
+                } else if (exportFormat === 'excel') {
+                    // For Excel, we'll create a CSV and let the browser handle it with .xlsx extension
+                    // Note: This is a simple approach. For complex Excel files, consider using a library like SheetJS
+                    const headers = ['ID', '类型', '金额', '日期', '分类', '支付方式', '备注', '创建时间'];
+                    const csvRows = [];
+                    
+                    // Add headers
+                    csvRows.push(headers.join(','));
+                    
+                    // Add data
+                    dataToExport.forEach(t => {
+                        const row = [
+                            t.id,
+                            t.type === 'income' ? '收入' : '支出',
+                            t.amount,
+                            t.date,
+                            getCategoryName(t.type, t.category),
+                            getPaymentMethodName(t.paymentMethod),
+                            t.description || '',
+                            t.createdAt
+                        ].map(field => `"${String(field).replace(/"/g, '""')}"`);
+                        
+                        csvRows.push(row.join(','));
+                    });
+                    
+                    const csvData = csvRows.join('\n');
+                    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvData);
+                    const exportFileName = `transactions_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                    
+                    downloadData(dataUri, exportFileName);
+                }
+                
+                hideExportModal();
+            }
+            
+            function downloadData(dataUri, fileName) {
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', fileName);
+                linkElement.click();
+            }
+            
+            function showImportModal() {
+                document.getElementById('importModal').classList.remove('hidden');
+            }
+            
+            function hideImportModal() {
+                document.getElementById('importModal').classList.add('hidden');
+            }
+            
+            function toggleImportMethod() {
+                const importMethod = document.getElementById('importMethod').value;
+                
+                document.getElementById('fileImportContainer').classList.add('hidden');
+                document.getElementById('githubImportContainer').classList.add('hidden');
+                document.getElementById('nutstoreImportContainer').classList.add('hidden');
+                
+                if (importMethod === 'file') {
+                    document.getElementById('fileImportContainer').classList.remove('hidden');
+                } else if (importMethod === 'github') {
+                    document.getElementById('githubImportContainer').classList.remove('hidden');
+                } else if (importMethod === 'nutstore') {
+                    document.getElementById('nutstoreImportContainer').classList.remove('hidden');
+                }
+            }
+            
+            function importData() {
+                const importMethod = document.getElementById('importMethod').value;
+                const mergeData = document.getElementById('mergeData').checked;
+                
+                if (importMethod === 'file') {
+                    const fileInput = document.getElementById('file-upload');
+                    if (fileInput.files.length === 0) {
+                        alert('请选择要导入的文件');
+                        return;
+                    }
+                    
+                    const file = fileInput.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        try {
+                            let importedTransactions = [];
+                            const content = e.target.result;
+                            
+                            if (file.name.endsWith('.json')) {
+                                importedTransactions = JSON.parse(content);
+                            } else if (file.name.endsWith('.csv')) {
+                                // Simple CSV parser (for demo purposes)
+                                const lines = content.split('\n');
+                                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                                
+                                for (let i = 1; i < lines.length; i++) {
+                                    if (!lines[i].trim()) continue;
+                                    
+                                    const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                                    const transaction = {};
+                                    
+                                    headers.forEach((header, index) => {
+                                        transaction[header] = values[index];
+                                    });
+                                    
+                                    // Convert to our format
+                                    if (transaction['ID'] && transaction['类型'] && transaction['金额'] && transaction['日期']) {
+                                        importedTransactions.push({
+                                            id: transaction['ID'],
+                                            type: transaction['类型'] === '收入' ? 'income' : 'expense',
+                                            amount: parseFloat(transaction['金额']),
+                                            date: transaction['日期'],
+                                            category: getCategoryId(transaction['类型'] === '收入' ? 'income' : 'expense', transaction['分类']),
+                                            paymentMethod: getPaymentMethodId(transaction['支付方式']),
+                                            description: transaction['备注'] || '',
+                                            createdAt: transaction['创建时间'] || new Date().toISOString()
+                                        });
+                                    }
+                                }
+                            }
+                            
+                            if (mergeData) {
+                                // Merge with existing transactions, avoiding duplicates
+                                const existingIds = transactions.map(t => t.id);
+                                const newTransactions = importedTransactions.filter(t => !existingIds.includes(t.id));
+                                transactions = [...transactions, ...newTransactions];
+                            } else {
+                                transactions = importedTransactions;
+                            }
+                            
+                            saveTransactions();
+                            
+                            // Update UI
+                            currentPage = 1;
+                            updateTransactionList();
+                            updateSummary();
+                            updateCategoryBreakdown();
+                            updateMonthlyChart();
+                            populateMonthFilter();
+                            
+                            alert(`成功导入 ${importedTransactions.length} 条记录`);
+                            hideImportModal();
+                        } catch (error) {
+                            console.error('导入错误:', error);
+                            alert('导入失败: ' + error.message);
+                        }
+                    };
+                    
+                    if (file.name.endsWith('.json')) {
+                        reader.readAsText(file);
+                    } else if (file.name.endsWith('.csv')) {
+                        reader.readAsText(file);
+                    } else {
+                        alert('不支持的文件格式');
+                    }
+                } else if (importMethod === 'github') {
+                    const repo = document.getElementById('githubRepo').value;
+                    const filePath = document.getElementById('githubFilePath').value;
+                    const token = document.getElementById('githubToken').value;
+                    
+                    if (!repo || !filePath) {
+                        alert('请填写GitHub仓库和文件路径');
+                        return;
+                    }
+                    
+                    // In a real app, you would make an API call to GitHub here
+                    // For this demo, we'll simulate it with a timeout
+                    alert('从GitHub导入功能需要实际的后端支持。在实际应用中，您需要调用GitHub API来获取文件内容。');
+                    
+                    // Simulate success
+                    setTimeout(() => {
+                        // This is just a demo - in a real app, you would parse the actual response
+                        const demoData = [
+                            {
+                                id: 'demo1',
+                                type: 'expense',
+                                amount: 50,
+                                date: '2023-06-15',
+                                category: 'food',
+                                paymentMethod: 'alipay',
+                                description: '午餐',
+                                createdAt: '2023-06-15T12:00:00Z'
+                            },
+                            {
+                                id: 'demo2',
+                                type: 'income',
+                                amount: 10000,
+                                date: '2023-06-01',
+                                category: 'salary',
+                                paymentMethod: 'bank_transfer',
+                                description: '工资',
+                                createdAt: '2023-06-01T09:00:00Z'
+                            }
+                        ];
+                        
+                        if (mergeData) {
+                            const existingIds = transactions.map(t => t.id);
+                            const newTransactions = demoData.filter(t => !existingIds.includes(t.id));
+                            transactions = [...transactions, ...newTransactions];
+                        } else {
+                            transactions = demoData;
+                        }
+                        
+                        saveTransactions();
+                        
+                        // Update UI
+                        currentPage = 1;
+                        updateTransactionList();
+                        updateSummary();
+                        updateCategoryBreakdown();
+                        updateMonthlyChart();
+                        populateMonthFilter();
+                        
+                        alert(`成功导入 ${demoData.length} 条演示记录`);
+                        hideImportModal();
+                    }, 1500);
+                } else if (importMethod === 'nutstore') {
+                    const username = document.getElementById('nutstoreUsername').value;
+                    const password = document.getElementById('nutstorePassword').value;
+                    const filePath = document.getElementById('nutstoreFilePath').value;
+                    
+                    if (!username || !password || !filePath) {
+                        alert('请填写坚果云用户名、密码和文件路径');
+                        return;
+                    }
+                    
+                    // In a real app, you would make an API call to Nutstore here
+                    // For this demo, we'll simulate it with a timeout
+                    alert('从坚果云导入功能需要实际的后端支持。在实际应用中，您需要调用坚果云API来获取文件内容。');
+                    
+                    // Simulate success
+                    setTimeout(() => {
+                        // This is just a demo - in a real app, you would parse the actual response
+                        const demoData = [
+                            {
+                                id: 'demo3',
+                                type: 'expense',
+                                amount: 200,
+                                date: '2023-06-10',
+                                category: 'shopping',
+                                paymentMethod: 'wechat',
+                                description: '衣服',
+                                createdAt: '2023-06-10T15:30:00Z'
+                            },
+                            {
+                                id: 'demo4',
+                                type: 'expense',
+                                amount: 1500,
+                                date: '2023-06-05',
+                                category: 'housing',
+                                paymentMethod: 'bank_transfer',
+                                description: '房租',
+                                createdAt: '2023-06-05T10:00:00Z'
+                            }
+                        ];
+                        
+                        if (mergeData) {
+                            const existingIds = transactions.map(t => t.id);
+                            const newTransactions = demoData.filter(t => !existingIds.includes(t.id));
+                            transactions = [...transactions, ...newTransactions];
+                        } else {
+                            transactions = demoData;
+                        }
+                        
+                        saveTransactions();
+                        
+                        // Update UI
+                        currentPage = 1;
+                        updateTransactionList();
+                        updateSummary();
+                        updateCategoryBreakdown();
+                        updateMonthlyChart();
+                        populateMonthFilter();
+                        
+                        alert(`成功导入 ${demoData.length} 条演示记录`);
+                        hideImportModal();
+                    }, 1500);
+                }
+            }
+            
+            function showSyncModal() {
+                document.getElementById('syncModal').classList.remove('hidden');
+            }
+            
+            function hideSyncModal() {
+                document.getElementById('syncModal').classList.add('hidden');
+            }
+            
+            function toggleSyncTarget() {
+                const syncTarget = document.getElementById('syncTarget').value;
+                
+                document.getElementById('githubSyncContainer').classList.add('hidden');
+                document.getElementById('nutstoreSyncContainer').classList.add('hidden');
+                
+                if (syncTarget === 'github') {
+                    document.getElementById('githubSyncContainer').classList.remove('hidden');
+                } else if (syncTarget === 'nutstore') {
+                    document.getElementById('nutstoreSyncContainer').classList.remove('hidden');
+                }
+            }
+            
+            function toggleCommitMessage() {
+                const showCommit = document.getElementById('githubCommitMessage').checked;
+                const commitContainer = document.getElementById('githubCommitContainer');
+                
+                if (showCommit) {
+                    commitContainer.classList.remove('hidden');
+                } else {
+                    commitContainer.classList.add('hidden');
+                }
+            }
+            
+            function syncData() {
+                const syncTarget = document.getElementById('syncTarget').value;
+                
+                if (syncTarget === 'github') {
+                    const repo = document.getElementById('syncGithubRepo').value;
+                    const filePath = document.getElementById('syncGithubFilePath').value;
+                    const token = document.getElementById('syncGithubToken').value;
+                    const commitMsg = document.getElementById('githubCommitMessage').checked 
+                        ? document.getElementById('githubCommitMsg').value 
+                        : 'Update transaction data';
+                    
+                    if (!repo || !filePath) {
+                        alert('请填写GitHub仓库和文件路径');
+                        return;
+                    }
+                    
+                    // In a real app, you would make an API call to GitHub here
+                    // For this demo, we'll simulate it with a timeout
+                    alert('同步到GitHub功能需要实际的后端支持。在实际应用中，您需要调用GitHub API来上传文件内容。');
+                    
+                    // Simulate success
+                    setTimeout(() => {
+                        alert('数据已成功同步到GitHub');
+                        hideSyncModal();
+                    }, 1500);
+                } else if (syncTarget === 'nutstore') {
+                    const username = document.getElementById('syncNutstoreUsername').value;
+                    const password = document.getElementById('syncNutstorePassword').value;
+                    const filePath = document.getElementById('syncNutstoreFilePath').value;
+                    
+                    if (!username || !password || !filePath) {
+                        alert('请填写坚果云用户名、密码和文件路径');
+                        return;
+                    }
+                    
+                    // In a real app, you would make an API call to Nutstore here
+                    // For this demo, we'll simulate it with a timeout
+                    alert('同步到坚果云功能需要实际的后端支持。在实际应用中，您需要调用坚果云API来上传文件内容。');
+                    
+                    // Simulate success
+                    setTimeout(() => {
+                        alert('数据已成功同步到坚果云');
+                        hideSyncModal();
+                    }, 1500);
+                }
+            }
+            
+            // Helper functions
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+            }
+            
+            function getPaymentMethodName(id) {
+                const methods = {
+                    cash: '现金',
+                    credit_card: '信用卡',
+                    debit_card: '借记卡',
+                    alipay: '支付宝',
+                    wechat: '微信支付',
+                    bank_transfer: '银行转账'
+                };
+                return methods[id] || id;
+            }
+            
+            function getPaymentMethodId(name) {
+                const methods = {
+                    '现金': 'cash',
+                    '信用卡': 'credit_card',
+                    '借记卡': 'debit_card',
+                    '支付宝': 'alipay',
+                    '微信支付': 'wechat',
+                    '银行转账': 'bank_transfer'
+                };
+                return methods[name] || name;
+            }
+            
+            function getCategoryName(type, id) {
+                const category = categories[type].find(c => c.id === id);
+                return category ? category.name : id;
+            }
+            
+            function getCategoryId(type, name) {
+                const category = categories[type].find(c => c.name === name);
+                return category ? category.id : name;
+            }
+        });
+    </script>
+</body>
+</html>

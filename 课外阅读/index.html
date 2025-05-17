@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>智能教材阅读器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            background: #f0f0f0;
+            transition: all 0.3s;
+            overflow: hidden;
+        }
+
+        .night-mode {
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        /* 侧边导航 */
+        #sidebar {
+            width: 280px;
+            background: #fff;
+            position: fixed;
+            left: -280px;
+            height: 100%;
+            overflow-y: auto;
+            transition: transform 0.3s;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        #sidebar.active {
+            transform: translateX(280px);
+        }
+
+        /* 图片容器 */
+        #image-container {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: inherit;
+        }
+
+        #image-viewer {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            scroll-behavior: smooth;
+            transform-origin: center center;
+        }
+
+        .page-image {
+            max-width: 95%;
+            max-height: 90vh;
+            width: auto;
+            height: auto;
+            margin: 0 auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            object-fit: contain;
+            cursor: grab;
+            display: block;
+            background: white;
+        }
+
+        /* 加载指示器 */
+        .loader {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: #2196F3;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* 底部控制栏 */
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+
+        .left-controls, .center-controls, .right-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .controls button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #page-indicator {
+            color: white;
+            min-width: 80px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* 目录样式 */
+        .folder-title {
+            padding: 10px 15px;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+        .folder-title::before {
+            content: '📂';
+            margin-right: 8px;
+        }
+
+        .book-item {
+            padding: 12px 20px 12px 35px;
+            border-bottom: 1px solid #f5f5f5;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .book-item::before {
+            content: '📄';
+            margin-right: 8px;
+        }
+
+        .book-item:hover {
+            background: #f9f9f9;
+        }
+
+        .night-mode .book-item:hover {
+            background: #333;
+        }
+
+        /* 错误提示 */
+        .error-message {
+            text-align: center;
+            padding: 50px;
+            color: #ff4444;
+        }
+
+        /* 批注样式 */
+        .annotation {
+            position: absolute;
+            background: rgba(255,255,0,0.3);
+            border: 1px dashed #ffcc00;
+            z-index: 10;
+        }
+
+        /* 笔记按钮激活状态 */
+        .notes-active {
+            color: #4CAF50 !important;
+        }
+
+        /* 横屏提示 */
+        .orientation-alert {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        /* 缩放菜单 */
+        .zoom-menu {
+            position: absolute;
+            bottom: 60px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 20px;
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 101;
+        }
+        
+        .zoom-menu.active {
+            display: flex;
+        }
+
+        /* 笔记模态框 */
+        .notes-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            z-index: 2000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+        
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        #notes-content {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+        }
+        
+        .notes-history {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .note-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        
+        .note-content {
+            margin-bottom: 5px;
+        }
+        
+        .note-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .note-actions {
+            margin-top: 5px;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .note-actions button {
+            padding: 3px 8px;
+            font-size: 12px;
+            border-radius: 3px;
+            border: none;
+            background: #e0e0e0;
+        }
+
+        /* 跳转页面模态框 */
+        .jump-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 300px;
+            z-index: 2000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+        
+        #jump-page-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        /* 遮罩层 */
+        .sidebar-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            z-index: 999;
+            display: none;
+        }
+
+        /* 音频控制栏 */
+        .audio-controls {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 25px;
+            padding: 12px;
+            display: none;
+            align-items: center;
+            gap: 15px;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s;
+        }
+
+        .audio-progress {
+            width: 200px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .audio-progress-bar {
+            position: absolute;
+            height: 100%;
+            background: #2196F3;
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+
+        .audio-time {
+            color: white;
+            font-size: 12px;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        #play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #2196F3;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #play-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* 夜间模式适配 */
+        .night-mode .audio-controls {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            .page-image {
+                max-width: 100%;
+                padding: 10px;
+            }
+            
+            #image-container {
+                height: calc(100vh - 60px);
+            }
+            
+            .audio-controls {
+                bottom: 60px;
+                right: 10px;
+                padding: 8px;
+                gap: 10px;
+            }
+            
+            .audio-progress {
+                width: 150px;
+            }
+        }
+
+        @media screen and (orientation: landscape) {
+            .orientation-alert {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边导航 -->
+    <aside id="sidebar">
+        <div id="directory"></div>
+    </aside>
+    
+    <!-- 主内容区 -->
+    <div id="image-container">
+        <div id="image-viewer"></div>
+    </div>
+    
+    <!-- 底部控制栏 -->
+    <div class="controls">
+        <div class="left-controls">
+            <button id="menu-btn">☰</button>
+            <button id="zoom-btn">🔍</button>
+            <div class="zoom-menu" id="zoom-menu">
+                <button id="zoom-in">+</button>
+                <button id="zoom-reset">↻</button>
+                <button id="zoom-out">-</button>
+                <button id="jump-btn">跳页</button>
+            </div>
+        </div>
+        
+        <div class="center-controls">
+            <button id="prev-page">←</button>
+            <span id="page-indicator">-/-</span>
+            <button id="next-page">→</button>
+        </div>
+        
+        <div class="right-controls">
+            <button id="notes-btn">📝</button>
+            <button id="night-mode">🌙</button>
+        </div>
+    </div>
+
+    <!-- 音频控制栏 -->
+    <div class="audio-controls" id="audio-controls">
+        <button id="play-btn">▶</button>
+        <div class="audio-time" id="audio-time">0:00 / 0:00</div>
+        <div class="audio-progress" id="audio-progress">
+            <div class="audio-progress-bar" id="audio-progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- 加载指示器 -->
+    <div class="loader" id="loader"></div>
+
+    <!-- 横屏提示 -->
+    <div class="orientation-alert">
+        <h2>请切换到竖屏模式</h2>
+        <p>为了更好的阅读体验，建议使用竖屏浏览</p>
+    </div>
+
+    <!-- 笔记模态框 -->
+    <div class="notes-modal" id="notes-modal" style="display: none;">
+        <div class="notes-header">
+            <h3>阅读笔记 (第<span id="current-note-page"></span>页)</h3>
+            <button onclick="closeNotesModal()">×</button>
+        </div>
+        <textarea id="notes-content" placeholder="写下你的思考或感想..."></textarea>
+        <button onclick="saveNote()" style="width: 100%; padding: 10px; margin-bottom: 10px;">保存笔记</button>
+        
+        <div class="notes-history" id="notes-history"></div>
+    </div>
+
+    <!-- 跳转页面模态框 -->
+    <div class="jump-modal" id="jump-modal" style="display: none;">
+        <div class="notes-header">
+            <h3>跳转到指定页面</h3>
+            <button onclick="closeJumpModal()">×</button>
+        </div>
+        <input type="number" id="jump-page-input" min="1" placeholder="输入页码">
+        <button onclick="jumpToPage()" style="width: 100%; padding: 10px;">跳转</button>
+        <p style="text-align: center; margin-top: 10px; color: #666;">
+            共 <span id="total-pages-display">0</span> 页
+        </p>
+    </div>
+
+    <!-- 遮罩层 -->
+    <div id="sidebar-mask" class="sidebar-mask"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+    <script>
+        // 配置信息
+        const config = {
+            basePath: './books/',
+            supportedFormats: ['jpg', 'png', 'jpeg'],
+            books: {
+                "小学语文": {
+                    type: 'folder',
+                    children: {
+                        "小学生必背古诗": {
+                            type: 'book',
+                            pages: 194,
+                            path: 'chinese-poetry/{page}',
+                            audioPath: 'audios/poetry/{page}.mp3'
+                        },
+                        "作文范文": {
+                            type: 'book',
+                            pages: 36,
+                            path: 'chinese-essay/{page}'
+                        }
+                    }
+                }
+            },
+            // Firebase配置（替换为您的实际配置）
+            firebase: {
+                apiKey: "AIzaSyABC123XYZ456DEF789GHI",
+                authDomain: "your-project-id.firebaseapp.com",
+                databaseURL: "https://your-project-id.firebaseio.com",
+                projectId: "your-project-id",
+                storageBucket: "your-project-id.appspot.com",
+                messagingSenderId: "123456789012",
+                appId: "1:123456789012:web:abc123def456ghi789jkl"
+            }
+        };
+
+        // 初始化Firebase
+        firebase.initializeApp(config.firebase);
+        const database = firebase.database();
+
+        // 全局状态
+        let currentBook = null;
+        let currentPage = 1;
+        let currentTotalPages = 0;
+        let currentFilePattern = { padLength: 1, format: 'jpg' };
+        let scale = 1;
+        let annotations = [];
+        let notes = JSON.parse(localStorage.getItem('localNotes')) || {};
+        let isSelectingText = false;
+        let selectionStart = null;
+        let currentNoteKey = null;
+        let audioElement = null;
+        let currentAudioPage = 0;
+
+        // 初始化
+        async function init() {
+            renderDirectory();
+            initEvents();
+            loadLastPosition();
+            checkOrientation();
+            setupFirebaseListeners();
+            
+            if (localStorage.getItem('nightMode') === 'true') {
+                document.body.classList.add('night-mode');
+            }
+        }
+
+        // 设置Firebase监听
+        function setupFirebaseListeners() {
+            database.ref('notes').on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                
+                // 更新本地笔记数据
+                Object.entries(data).forEach(([key, note]) => {
+                    if (!notes[note.book]) notes[note.book] = {};
+                    if (!notes[note.book][note.page]) notes[note.book][note.page] = [];
+                    
+                    const existingIndex = notes[note.book][note.page].findIndex(n => n.key === key);
+                    if (existingIndex >= 0) {
+                        notes[note.book][note.page][existingIndex] = { ...note, key };
+                    } else {
+                        notes[note.book][note.page].push({ ...note, key });
+                    }
+                });
+                
+                localStorage.setItem('localNotes', JSON.stringify(notes));
+                
+                // 如果当前打开了笔记模态框，刷新显示
+                if (document.getElementById('notes-modal').style.display === 'block') {
+                    showNotesModal();
+                }
+                
+                // 更新目录中的笔记标记
+                renderDirectory();
+            });
+        }
+
+        // 渲染目录
+        function renderDirectory() {
+            const container = document.getElementById('directory');
+            container.innerHTML = buildTree(config.books);
+        }
+
+        // 生成目录HTML
+        function buildTree(data) {
+            return Object.entries(data).map(([name, info]) => {
+                if (info.type === 'folder') {
+                    return `
+                        <div class="folder">
+                            <div class="folder-title">${name}</div>
+                            <div class="folder-content">
+                                ${buildTree(info.children)}
+                            </div>
+                        </div>
+                    `;
+                }
+                const hasNotes = notes[info.path] && Object.values(notes[info.path]).some(p => p.length > 0);
+                return `
+                    <div class="book-item" 
+                         data-path="${info.path}"
+                         data-pages="${info.pages}">
+                        ${name} (共${info.pages}页)
+                        ${hasNotes ? '📝' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 加载书籍
+        async function loadBook(pathPattern, totalPages) {
+            try {
+                showLoader(true);
+                clearAnnotations();
+                stopAudio();
+                
+                currentBook = pathPattern;
+                currentPage = 1;
+                currentTotalPages = totalPages;
+                
+                // 检测文件命名规则
+                currentFilePattern = await detectFilePattern(pathPattern);
+                
+                // 立即加载并显示第一页
+                await loadAndRenderPage(currentPage);
+                
+                // 异步预加载其他页
+                setTimeout(() => preloadAdjacentPages(), 100);
+                
+                updatePageIndicator();
+                savePosition();
+                checkNotes();
+            } catch (err) {
+                console.error('书籍加载失败:', err);
+                showError(`无法加载书籍：${err.message}`);
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        // 检测文件命名规则
+        async function detectFilePattern(pathPattern) {
+            const testPage = 1;
+            
+            // 测试所有可能的组合
+            for (const padLength of [1, 2, 3]) {
+                for (const format of config.supportedFormats) {
+                    const url = buildImageUrl(pathPattern, testPage, padLength, format);
+                    try {
+                        const exists = await checkFileExists(url);
+                        if (exists) {
+                            console.log('检测到文件格式:', {padLength, format});
+                            return {padLength, format};
+                        }
+                    } catch (e) {
+                        console.debug(`测试文件不存在: ${url}`);
+                    }
+                }
+            }
+            
+            throw new Error('未找到有效的图片文件');
+        }
+
+        // 构建图片URL
+        function buildImageUrl(pattern, page, padLength, format) {
+            const padded = page.toString().padStart(padLength, '0');
+            return `${config.basePath}${pattern.replace('{page}', padded)}.${format}`;
+        }
+
+        // 检查文件是否存在
+        function checkFileExists(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+                img.src = url;
+            });
+        }
+
+        // 加载并渲染单页
+        async function loadAndRenderPage(page) {
+            try {
+                const url = getPageUrl(page);
+                const img = await loadImage(url);
+                renderPage(img, page);
+                checkAndLoadAudio(currentBook, page);
+            } catch (err) {
+                console.error(`第${page}页加载失败:`, err);
+                showError(`第${page}页加载失败，请检查图片文件`);
+                throw err;
+            }
+        }
+
+        // 加载图片
+        function loadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    resolve(img);
+                    setTimeout(adjustImageSize, 100); // 延迟确保图片已渲染
+                };
+                img.onerror = () => reject(new Error(`加载失败: ${url}`));
+                img.src = url;
+            });
+        }
+
+        // 渲染当前页
+        function renderPage(img, page) {
+            const container = document.getElementById('image-viewer');
+            container.innerHTML = '';
+            
+            if (!img) {
+                container.innerHTML = `
+                    <div class="error-message">
+                        <p>图片加载失败</p>
+                        <button onclick="retryCurrentPage()">重试</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            const imgClone = img.cloneNode();
+            imgClone.className = 'page-image';
+            container.appendChild(imgClone);
+            
+            // 恢复批注
+            restoreAnnotations(page);
+            
+            // 调整图片大小
+            adjustImageSize();
+        }
+
+        // 调整图片大小
+        function adjustImageSize() {
+            const container = document.getElementById('image-container');
+            const img = document.querySelector('.page-image');
+            if (!img) return;
+
+            // 计算可用空间
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // 计算最佳缩放比例
+            const widthRatio = containerWidth / img.naturalWidth;
+            const heightRatio = containerHeight / img.naturalHeight;
+            const minRatio = Math.min(widthRatio, heightRatio);
+            
+            // 应用自动缩放
+            scale = Math.min(minRatio, 1); // 初始不放大超过100%
+            applyZoom();
+        }
+
+        // 预加载前后页
+        function preloadAdjacentPages() {
+            if (!currentBook) return;
+            
+            const start = Math.max(1, currentPage - 3);
+            const end = Math.min(currentTotalPages, currentPage + 3);
+            
+            for (let i = start; i <= end; i++) {
+                if (i !== currentPage) {
+                    const url = getPageUrl(i);
+                    new Image().src = url; // 静默预加载
+                }
+            }
+        }
+
+        // 获取当前页URL
+        function getPageUrl(page) {
+            return buildImageUrl(
+                currentBook,
+                page,
+                currentFilePattern.padLength,
+                currentFilePattern.format
+            );
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const container = document.getElementById('image-viewer');
+            container.innerHTML = `
+                <div class="error-message">
+                    <p>${message}</p>
+                    <button onclick="retryCurrentBook()">重新加载</button>
+                </div>
+            `;
+        }
+
+        // 更新页码显示
+        function updatePageIndicator() {
+            document.getElementById('page-indicator').textContent = 
+                `${currentPage}/${currentTotalPages}`;
+        }
+
+        // 保存阅读位置
+        function savePosition() {
+            if (currentBook) {
+                localStorage.setItem('lastPosition', JSON.stringify({
+                    bookPath: currentBook,
+                    page: currentPage,
+                    totalPages: currentTotalPages,
+                    pattern: currentFilePattern
+                }));
+            }
+        }
+
+        // 加载最后阅读位置
+        function loadLastPosition() {
+            const saved = localStorage.getItem('lastPosition');
+            if (saved) {
+                const { bookPath, page, totalPages, pattern } = JSON.parse(saved);
+                currentFilePattern = pattern;
+                loadBook(bookPath, totalPages).then(() => {
+                    currentPage = Math.min(page, totalPages);
+                    loadAndRenderPage(currentPage);
+                });
+            }
+        }
+
+        // 检查当前页笔记
+        function checkNotes() {
+            const notesBtn = document.getElementById('notes-btn');
+            if (notes[currentBook] && notes[currentBook][currentPage] && notes[currentBook][currentPage].length > 0) {
+                notesBtn.classList.add('notes-active');
+            } else {
+                notesBtn.classList.remove('notes-active');
+            }
+        }
+
+        // 音频控制逻辑
+        function checkAndLoadAudio(bookPath, page) {
+            const audioControls = document.getElementById('audio-controls');
+            const bookConfig = findBookConfig(bookPath);
+            
+            if (bookConfig && bookConfig.audioPath) {
+                const audioUrl = `${config.basePath}${bookConfig.audioPath.replace('{page}', page)}`;
+                initAudioPlayer(audioUrl, page);
+                audioControls.style.display = 'flex';
+            } else {
+                audioControls.style.display = 'none';
+                stopAudio();
+            }
+        }
+
+        function findBookConfig(path) {
+            // 递归查找匹配的书籍配置
+            function search(books) {
+                for (const key in books) {
+                    const item = books[key];
+                    if (item.path === path) return item;
+                    if (item.children) {
+                        const result = search(item.children);
+                        if (result) return result;
+                    }
+                }
+                return null;
+            }
+            return search(config.books);
+        }
+
+        function initAudioPlayer(url, page) {
+            // 清理之前的音频
+            stopAudio();
+            currentAudioPage = page;
+
+            audioElement = new Audio(url);
+            
+            // 事件监听
+            audioElement.addEventListener('timeupdate', updateProgress);
+            audioElement.addEventListener('loadedmetadata', () => {
+                document.getElementById('audio-time').textContent = 
+                    `0:00 / ${formatTime(audioElement.duration)}`;
+            });
+            audioElement.addEventListener('ended', () => {
+                document.getElementById('play-btn').textContent = '▶';
+            });
+
+            // 进度条交互
+            const progress = document.getElementById('audio-progress');
+            progress.addEventListener('click', (e) => {
+                const rect = progress.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width;
+                audioElement.currentTime = percent * audioElement.duration;
+            });
+        }
+
+        function stopAudio() {
+            if (audioElement) {
+                audioElement.pause();
+                audioElement = null;
+                document.getElementById('play-btn').textContent = '▶';
+            }
+        }
+
+        // 辅助函数
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateProgress() {
+            const progressBar = document.getElementById('audio-progress-bar');
+            const percent = (audioElement.currentTime / audioElement.duration) * 100;
+            progressBar.style.width = `${percent}%`;
+            
+            document.getElementById('audio-time').textContent = 
+                `${formatTime(audioElement.currentTime)} / ${formatTime(audioElement.duration)}`;
+        }
+
+        // 显示笔记模态框
+        function showNotesModal() {
+            if (!currentBook) return;
+            
+            const modal = document.getElementById('notes-modal');
+            const pageNotes = notes[currentBook] && notes[currentBook][currentPage] ? 
+                notes[currentBook][currentPage] : [];
+            
+            // 显示当前页笔记
+            document.getElementById('current-note-page').textContent = currentPage;
+            
+            // 如果有笔记，显示最新的一条
+            if (pageNotes.length > 0) {
+                const latestNote = pageNotes.reduce((prev, current) => 
+                    (prev.timestamp > current.timestamp) ? prev : current);
+                document.getElementById('notes-content').value = latestNote.content;
+                currentNoteKey = latestNote.key;
+            } else {
+                document.getElementById('notes-content').value = '';
+                currentNoteKey = null;
+            }
+            
+            // 显示历史记录
+            const historyContainer = document.getElementById('notes-history');
+            if (pageNotes.length > 0) {
+                historyContainer.innerHTML = pageNotes
+                    .sort((a, b) => b.timestamp - a.timestamp)
+                    .map(note => `
+                        <div class="note-item">
+                            <div class="note-content">${note.content}</div>
+                            <div class="note-meta">
+                                <span>${new Date(note.timestamp).toLocaleString()}</span>
+                            </div>
+                            <div class="note-actions">
+                                <button onclick="editNote('${note.key}')">编辑</button>
+                                <button onclick="deleteNote('${note.key}')">删除</button>
+                            </div>
+                        </div>
+                    `).join('');
+            } else {
+                historyContainer.innerHTML = '<p>暂无历史笔记</p>';
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        // 保存笔记
+        async function saveNote() {
+            const content = document.getElementById('notes-content').value.trim();
+            if (!content) {
+                alert('请输入笔记内容');
+                return;
+            }
+
+            try {
+                const noteData = {
+                    content,
+                    timestamp: Date.now(),
+                    book: currentBook,
+                    page: currentPage
+                };
+
+                // 如果有正在编辑的笔记，更新它；否则创建新笔记
+                if (currentNoteKey) {
+                    await database.ref(`notes/${currentNoteKey}`).update(noteData);
+                } else {
+                    const newNoteRef = database.ref('notes').push();
+                    await newNoteRef.set(noteData);
+                    currentNoteKey = newNoteRef.key;
+                }
+
+                // 更新本地状态
+                if (!notes[currentBook]) notes[currentBook] = {};
+                if (!notes[currentBook][currentPage]) notes[currentBook][currentPage] = [];
+                
+                // 检查是否已存在该笔记
+                const existingIndex = notes[currentBook][currentPage].findIndex(n => n.key === currentNoteKey);
+                if (existingIndex >= 0) {
+                    notes[currentBook][currentPage][existingIndex] = { ...noteData, key: currentNoteKey };
+                } else {
+                    notes[currentBook][currentPage].push({ ...noteData, key: currentNoteKey });
+                }
+                
+                localStorage.setItem('localNotes', JSON.stringify(notes));
+                
+                // 更新UI
+                checkNotes();
+                showNotesModal();
+            } catch (error) {
+                console.error('保存笔记失败:', error);
+                alert('保存笔记失败，请检查网络连接');
+            }
+        }
+
+        // 编辑笔记
+        function editNote(noteKey) {
+            const note = notes[currentBook][currentPage].find(n => n.key === noteKey);
+            if (note) {
+                document.getElementById('notes-content').value = note.content;
+                currentNoteKey = noteKey;
+                document.getElementById('notes-content').focus();
+            }
+        }
+
+        // 删除笔记
+        async function deleteNote(noteKey) {
+            if (confirm('确定要删除这条笔记吗？')) {
+                try {
+                    // 删除云端数据
+                    await database.ref(`notes/${noteKey}`).remove();
+                    
+                    // 删除本地数据
+                    notes[currentBook][currentPage] = notes[currentBook][currentPage].filter(n => n.key !== noteKey);
+                    localStorage.setItem('localNotes', JSON.stringify(notes));
+                    
+                    // 更新UI
+                    if (notes[currentBook][currentPage].length === 0) {
+                        document.getElementById('notes-btn').classList.remove('notes-active');
+                    }
+                    
+                    showNotesModal();
+                } catch (error) {
+                    console.error('删除笔记失败:', error);
+                    alert('删除笔记失败，请检查网络连接');
+                }
+            }
+        }
+
+        // 关闭笔记模态框
+        function closeNotesModal() {
+            document.getElementById('notes-modal').style.display = 'none';
+        }
+
+        // 显示跳转页面模态框
+        function showJumpModal() {
+            if (!currentBook) return;
+            
+            const modal = document.getElementById('jump-modal');
+            document.getElementById('jump-page-input').value = currentPage;
+            document.getElementById('jump-page-input').max = currentTotalPages;
+            document.getElementById('total-pages-display').textContent = currentTotalPages;
+            modal.style.display = 'block';
+            document.getElementById('jump-page-input').focus();
+        }
+
+        // 关闭跳转页面模态框
+        function closeJumpModal() {
+            document.getElementById('jump-modal').style.display = 'none';
+        }
+
+        // 跳转到指定页面
+        function jumpToPage() {
+            const input = document.getElementById('jump-page-input');
+            let page = parseInt(input.value);
+            
+            if (isNaN(page) || page < 1 || page > currentTotalPages) {
+                alert(`请输入有效的页码 (1-${currentTotalPages})`);
+                return;
+            }
+            
+            currentPage = page;
+            loadAndRenderPage(currentPage);
+            updatePageIndicator();
+            savePosition();
+            checkNotes();
+            closeJumpModal();
+        }
+
+        // 批注功能
+        function initTextSelection() {
+            const container = document.getElementById('image-viewer');
+            
+            container.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'IMG') {
+                    isSelectingText = true;
+                    const rect = e.target.getBoundingClientRect();
+                    selectionStart = {
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                    };
+                }
+            });
+            
+            container.addEventListener('mousemove', (e) => {
+                if (isSelectingText && selectionStart) {
+                    clearAnnotations();
+                    
+                    const img = document.querySelector('.page-image');
+                    const rect = img.getBoundingClientRect();
+                    const endX = e.clientX - rect.left;
+                    const endY = e.clientY - rect.top;
+                    
+                    // 创建临时批注
+                    const annotation = document.createElement('div');
+                    annotation.className = 'annotation';
+                    annotation.style.left = `${Math.min(selectionStart.x, endX)}px`;
+                    annotation.style.top = `${Math.min(selectionStart.y, endY)}px`;
+                    annotation.style.width = `${Math.abs(endX - selectionStart.x)}px`;
+                    annotation.style.height = `${Math.abs(endY - selectionStart.y)}px`;
+                    
+                    container.appendChild(annotation);
+                }
+            });
+            
+            container.addEventListener('mouseup', (e) => {
+                if (isSelectingText && selectionStart) {
+                    const img = document.querySelector('.page-image');
+                    const rect = img.getBoundingClientRect();
+                    const endX = e.clientX - rect.left;
+                    const endY = e.clientY - rect.top;
+                    
+                    if (Math.abs(endX - selectionStart.x) > 10 && 
+                        Math.abs(endY - selectionStart.y) > 10) {
+                        // 保存批注
+                        saveAnnotation(
+                            currentPage,
+                            selectionStart.x,
+                            selectionStart.y,
+                            endX - selectionStart.x,
+                            endY - selectionStart.y
+                        );
+                    }
+                    
+                    isSelectingText = false;
+                    selectionStart = null;
+                }
+            });
+        }
+
+        // 保存批注
+        function saveAnnotation(page, x, y, width, height) {
+            if (!annotations[currentBook]) {
+                annotations[currentBook] = {};
+            }
+            
+            if (!annotations[currentBook][page]) {
+                annotations[currentBook][page] = [];
+            }
+            
+            annotations[currentBook][page].push({ x, y, width, height });
+            localStorage.setItem('annotations', JSON.stringify(annotations));
+            restoreAnnotations(page);
+        }
+
+        // 恢复批注
+        function restoreAnnotations(page) {
+            if (!annotations[currentBook] || !annotations[currentBook][page]) return;
+            
+            const container = document.getElementById('image-viewer');
+            annotations[currentBook][page].forEach(ann => {
+                const annotation = document.createElement('div');
+                annotation.className = 'annotation';
+                annotation.style.left = `${ann.x}px`;
+                annotation.style.top = `${ann.y}px`;
+                annotation.style.width = `${ann.width}px`;
+                annotation.style.height = `${ann.height}px`;
+                container.appendChild(annotation);
+            });
+        }
+
+        // 清除批注
+        function clearAnnotations() {
+            document.querySelectorAll('.annotation').forEach(el => el.remove());
+        }
+
+        // 缩放功能
+        function applyZoom() {
+            const img = document.querySelector('.page-image');
+            if (img) {
+                img.style.width = `${img.naturalWidth * scale}px`;
+                img.style.height = `${img.naturalHeight * scale}px`;
+                centerImage();
+            }
+        }
+
+        // 保持图片居中
+        function centerImage() {
+            const container = document.getElementById('image-viewer');
+            const img = document.querySelector('.page-image');
+            if (img) {
+                const offsetX = (container.offsetWidth - img.offsetWidth) / 2;
+                const offsetY = (container.offsetHeight - img.offsetHeight) / 2;
+                container.scrollTo(offsetX, offsetY);
+            }
+        }
+
+        // 横屏检测
+        function checkOrientation() {
+            function handleOrientationChange() {
+                if (window.matchMedia("(orientation: portrait)").matches) {
+                    document.querySelector('.orientation-alert').style.display = 'none';
+                } else {
+                    document.querySelector('.orientation-alert').style.display = 'flex';
+                }
+            }
+            
+            window.addEventListener('resize', handleOrientationChange);
+            handleOrientationChange();
+        }
+
+        // 事件处理
+        function initEvents() {
+            // 菜单按钮
+            document.getElementById('menu-btn').addEventListener('click', () => {
+                const sidebar = document.getElementById('sidebar');
+                const mask = document.getElementById('sidebar-mask');
+                
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                    mask.style.display = 'none';
+                } else {
+                    sidebar.classList.add('active');
+                    mask.style.display = 'block';
+                }
+            });
+
+            // 遮罩层点击事件
+            document.getElementById('sidebar-mask').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.remove('active');
+                document.getElementById('sidebar-mask').style.display = 'none';
+            });
+
+            // 防止点击侧边栏内部触发遮罩层关闭
+            document.getElementById('sidebar').addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
+            // ESC键关闭侧边栏
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    document.getElementById('sidebar').classList.remove('active');
+                    document.getElementById('sidebar-mask').style.display = 'none';
+                }
+            });
+
+            // 目录项点击
+            document.getElementById('directory').addEventListener('click', (e) => {
+                const item = e.target.closest('.book-item');
+                if (item) {
+                    const path = item.dataset.path;
+                    const pages = parseInt(item.dataset.pages);
+                    loadBook(path, pages);
+                    document.getElementById('sidebar').classList.remove('active');
+                    document.getElementById('sidebar-mask').style.display = 'none';
+                }
+            });
+
+            // 翻页控制
+            document.getElementById('prev-page').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadAndRenderPage(currentPage);
+                    preloadAdjacentPages();
+                    updatePageIndicator();
+                    savePosition();
+                    checkNotes();
+                    stopAudio();
+                }
+            });
+
+            document.getElementById('next-page').addEventListener('click', () => {
+                if (currentPage < currentTotalPages) {
+                    currentPage++;
+                    loadAndRenderPage(currentPage);
+                    preloadAdjacentPages();
+                    updatePageIndicator();
+                    savePosition();
+                    checkNotes();
+                    stopAudio();
+                }
+            });
+
+            // 触屏滑动
+            let touchStartX = 0;
+            document.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    touchStartX = e.touches[0].clientX;
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchend', (e) => {
+                if (e.changedTouches.length !== 1) return;
+                
+                const diff = touchStartX - e.changedTouches[0].clientX;
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0 && currentPage < currentTotalPages) {
+                        currentPage++;
+                        loadAndRenderPage(currentPage);
+                        updatePageIndicator();
+                        savePosition();
+                        checkNotes();
+                        stopAudio();
+                    } else if (diff < 0 && currentPage > 1) {
+                        currentPage--;
+                        loadAndRenderPage(currentPage);
+                        updatePageIndicator();
+                        savePosition();
+                        checkNotes();
+                        stopAudio();
+                    }
+                }
+            }, { passive: true });
+
+            // 双指缩放
+            let initialDistance = null;
+            document.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    initialDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                }
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2 && initialDistance) {
+                    e.preventDefault();
+                    const currentDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    const newScale = scale * (currentDistance / initialDistance);
+                    scale = Math.min(Math.max(newScale, 0.5), 3);
+                    applyZoom();
+                }
+            }, { passive: false });
+
+            document.addEventListener('touchend', () => {
+                initialDistance = null;
+            });
+
+            // 笔记按钮
+            document.getElementById('notes-btn').addEventListener('click', showNotesModal);
+
+            // 缩放控制
+            document.getElementById('zoom-btn').addEventListener('click', () => {
+                document.getElementById('zoom-menu').classList.toggle('active');
+            });
+            
+            document.getElementById('zoom-in').addEventListener('click', () => {
+                scale = Math.min(scale + 0.1, 3);
+                applyZoom();
+            });
+
+            document.getElementById('zoom-out').addEventListener('click', () => {
+                scale = Math.max(scale - 0.1, 0.5);
+                applyZoom();
+            });
+
+            document.getElementById('zoom-reset').addEventListener('click', () => {
+                adjustImageSize();
+                document.getElementById('zoom-menu').classList.remove('active');
+            });
+
+            // 跳转页面按钮
+            document.getElementById('jump-btn').addEventListener('click', showJumpModal);
+
+            // 点击其他地方关闭缩放菜单
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#zoom-btn') && !e.target.closest('#zoom-menu')) {
+                    document.getElementById('zoom-menu').classList.remove('active');
+                }
+            });
+
+            // 夜间模式
+            document.getElementById('night-mode').addEventListener('click', () => {
+                document.body.classList.toggle('night-mode');
+                localStorage.setItem('nightMode', 
+                    document.body.classList.contains('night-mode'));
+            });
+
+            // 跳转页面输入框回车事件
+            document.getElementById('jump-page-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    jumpToPage();
+                }
+            });
+
+            // 播放按钮控制
+            document.getElementById('play-btn').addEventListener('click', function() {
+                if (!audioElement) return;
+
+                if (audioElement.paused) {
+                    audioElement.play();
+                    this.textContent = '⏸';
+                } else {
+                    audioElement.pause();
+                    this.textContent = '▶';
+                }
+            });
+
+            // 窗口大小变化时重新调整图片
+            window.addEventListener('resize', () => {
+                adjustImageSize();
+                centerImage();
+            });
+
+            // 初始化文本选择批注
+            initTextSelection();
+        }
+
+        // 显示/隐藏加载指示器
+        function showLoader(show) {
+            document.getElementById('loader').style.display = show ? 'block' : 'none';
+        }
+
+        // 重试当前页
+        function retryCurrentPage() {
+            loadAndRenderPage(currentPage);
+        }
+
+        // 重试当前书籍
+        function retryCurrentBook() {
+            if (currentBook) {
+                loadBook(currentBook, currentTotalPages);
+            }
+        }
+
+        // 全局函数
+        window.retryCurrentPage = retryCurrentPage;
+        window.retryCurrentBook = retryCurrentBook;
+        window.loadBook = loadBook;
+        window.showNotesModal = showNotesModal;
+        window.closeNotesModal = closeNotesModal;
+        window.saveNote = saveNote;
+        window.editNote = editNote;
+        window.deleteNote = deleteNote;
+        window.showJumpModal = showJumpModal;
+        window.closeJumpModal = closeJumpModal;
+        window.jumpToPage = jumpToPage;
+
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

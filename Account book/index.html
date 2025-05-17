@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人生活记账</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#FB7185'
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                       'sm': '4px',
+                        DEFAULT: '8px',
+                       'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        '2xl': '24px',
+                        '3xl': '32px',
+                        'full': '9999px',
+                        'button': '8px'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+
+    <!-- 新增SweetAlert2 -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :where([class^="ri-"])::before {
+            content: "\f3c2";
+        }
+
+        body {
+            background-color: #f9fafb;
+            font-family: 'Inter', sans-serif;
+        }
+
+       .coin {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #FFD700;
+            border-radius: 50%;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+       .coin-inner {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 20px;
+            height: 20px;
+            background-color: #FFC107;
+            border-radius: 50%;
+        }
+
+        @keyframes coinFall {
+            0% {
+                transform: translateY(-50px) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(200px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+       .record-dot {
+            position: absolute;
+            left: -9px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: white;
+            border: 3px solid #4F46E5;
+            z-index: 10;
+        }
+
+       .record-line {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #E5E7EB;
+            z-index: 5;
+        }
+
+       .user-card {
+            transition: all 0.3s ease;
+        }
+
+       .user-card.active {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+       .balance-value {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+       .transaction-button {
+            transition: all 0.2s ease;
+        }
+
+       .transaction-button:hover {
+            transform: translateY(-2px);
+        }
+
+       .transaction-button:active {
+            transform: translateY(1px);
+        }
+
+        /* 新增暗色主题样式 */
+       .dark-mode {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+       .dark-mode.bg-white {
+            background-color: #2d2d2d !important;
+        }
+
+       .dark-mode.text-gray-800 {
+            color: #e0e0e0 !important;
+        }
+
+       .dark-mode.border-gray-200 {
+            border-color: #404040 !important;
+        }
+
+        /* 调整夜间模式下用户卡片文字颜色 */
+       .dark-mode.user-card h3,
+       .dark-mode.user-card.text-xs {
+            color: #ffffff;
+        }
+
+        /* 统计页面样式 */
+       .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        /* 增强说明弹窗样式 */
+       .swal2-popup {
+            font-family: 'Inter', sans-serif !important;
+            max-width: 500px !important;
+        }
+
+       .instruction-title {
+            color: #4F46E5;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+       .instruction-list {
+            list-style: none;
+            padding-left: 1.5rem;
+        }
+
+       .instruction-list li {
+            margin-bottom: 0.8rem;
+            position: relative;
+            font-size: 1.1rem;
+        }
+
+       .instruction-list li::before {
+            content: "•";
+            color: #FB7185;
+            font-weight: bold;
+            display: inline-block;
+            width: 1.5rem;
+            margin-left: -1.5rem;
+        }
+
+       .important-note {
+            color: #EF4444;
+            font-weight: bold;
+            margin-top: 1.5rem;
+            border-left: 4px solid #EF4444;
+            padding-left: 1rem;
+        }
+
+        @media (max-width: 480px) {
+           .custom-swal-popup {
+                margin: 0 10px !important;
+                width: calc(100% - 20px) !important;
+            }
+        }
+
+        /* 备注输入框样式 */
+        #transactionNote::placeholder {
+            color: #9CA3AF;
+            font-size: 0.875rem;
+        }
+
+        /* 记录备注样式 */
+       .record-note {
+            color: #6B7280;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        /* 夜间模式优化 */
+       .dark-mode {
+            background-color: #2D142C;
+            /* 深紫色背景 */
+            color: #F7E8F6;
+            /* 浅粉色文字 */
+        }
+
+       .dark-mode.bg-white {
+            background-color: #3A1D38 !important;
+            /* 深紫色卡片背景 */
+            border-color: #4A2548 !important;
+        }
+
+       .dark-mode.text-gray-800 {
+            color: #F7E8F6 !important;
+        }
+/* 更新暗色主题样式 */
+.dark-mode {
+    background-color: #111827 !important;
+    color: #e5e7eb !important;
+}
+
+.dark-mode .bg-white {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+}
+
+.dark-mode .text-gray-800,
+.dark-mode .text-gray-700,
+.dark-mode .text-gray-600,
+.dark-mode .text-gray-500 {
+    color: #d1d5db !important;
+}
+
+.dark-mode .border-gray-200,
+.dark-mode .border-gray-300 {
+    border-color: #4b5563 !important;
+}
+
+.dark-mode .bg-gray-50 {
+    background-color: #374151 !important;
+}
+
+.dark-mode .bg-primary/10 {
+    background-color: rgba(79, 70, 229, 0.2) !important;
+}
+
+.dark-mode .shadow-sm,
+.dark-mode .shadow-md {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+    background-color: #1f2937 !important;
+    border-color: #4b5563 !important;
+    color: #f3f4f6 !important;
+}
+
+.dark-mode input::placeholder {
+    color: #9ca3af !important;
+}
+
+.dark-mode .swal2-popup {
+    background-color: #1f2937 !important;
+    color: #f3f4f6 !important;
+}
+
+.dark-mode .swal2-title,
+.dark-mode .swal2-html-container {
+    color: #f3f4f6 !important;
+}
+
+.dark-mode .swal2-input {
+    background-color: #1f2937 !important;
+    color: #f3f4f6 !important;
+}
+
+.dark-mode .record-line {
+    background-color: #4b5563 !important;
+}
+
+.dark-mode .coin {
+    background-color: #f59e0b !important;
+}
+
+.dark-mode .coin-inner {
+    background-color: #d97706 !important;
+}
+
+.dark-mode .user-card h3 {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.dark-mode .user-card .text-gray-500 {
+    color: #9ca3af !important;
+}
+
+.dark-mode .nav, 
+.dark-mode .bottom-nav {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+}
+
+.dark-mode .ri-moon-line,
+.dark-mode .ri-sun-line,
+.dark-mode .ri-refresh-line,
+.dark-mode .ri-download-line {
+    color: #e5e7eb !important;
+}
+.transaction-icon {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    margin-right: 8px;
+    object-fit: contain;
+}
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+    <div class="max-w-md mx-auto pb-24 relative min-h-screen">
+        <!-- 顶部导航栏 -->
+        <!-- 修改后的导航栏部分 -->
+        <nav class="bg-white shadow-md fixed top-0 w-full z-50 px-4 py-3 flex items-center justify-between">
+            <div class="w-10 h-10 flex items-center justify-center cursor-pointer" id="themeToggle">
+                <i class="ri-moon-line ri-xl text-gray-600"></i>
+            </div>
+            <h1 class="text-xl font-['Pacifico'] text-primary">个人生活记账</h1>
+            <div class="flex gap-2">
+                <!-- 保留导出按钮 -->
+                <div class="w-10 h-10 flex items-center justify-center cursor-pointer" id="exportData">
+                    <i class="ri-download-line ri-xl text-gray-600"></i>
+                </div>
+                <!-- 同步按钮 -->
+                <div class="w-10 h-10 flex items-center justify-center cursor-pointer" id="syncButton">
+                    <i class="ri-refresh-line ri-xl text-gray-600"></i>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主要内容区域 -->
+        <div class="pt-16 px-4">
+            <!-- 用户切换 -->
+            <div class="flex gap-4 mt-4">
+                <div class="user-card active flex-1 bg-white rounded-lg shadow-md p-3 cursor-pointer" data-user="1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <i class="ri-user-smile-line ri-lg text-primary"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium">用户1</h3>
+                            <div class="text-xs text-gray-500">
+                                <span class="user-balance">0.0</span> 元
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-card flex-1 bg-white rounded-lg shadow-md p-3 cursor-pointer" data-user="2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+                            <i class="ri-user-smile-line ri-lg text-secondary"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium">用户2</h3>
+                            <div class="text-xs text-gray-500">
+                                <span class="user-balance">0.0</span> 元
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 余额展示 -->
+            <div class="mt-6 bg-white rounded-lg shadow-md p-5 text-center relative">
+                <h2 class="text-sm text-gray-500 mb-1">当前余额</h2>
+                <div class="text-4xl font-bold text-primary mb-2 current-balance">
+                    0
+                </div>
+
+                <button id="addTransactionBtn" class="mt-4 bg-primary text-white py-2 px-4 rounded-button w-full flex items-center justify-center gap-2">
+                    <i class="ri-add-line"></i>
+                    <span>添加收支记录</span>
+                </button>
+            </div>
+            <!-- 收支记录 -->
+            <div class="mt-6 bg-white rounded-lg shadow-md p-5">
+                <h2 class="text-lg font-medium mb-4">收支记录</h2>
+
+                <div id="recordsContainer" class="relative">
+                    <div class="record-line"></div>
+
+                    <!-- 初始无记录 -->
+                </div>
+
+                <button id="loadMoreBtn" class="mt-3 w-full py-2 text-sm text-gray-500 border border-gray-300 rounded-button">
+                    加载更多
+                </button>
+            </div>
+        </div>
+
+        <!-- 底部标签栏 -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 px-4 py-2 flex justify-around">
+            <div class="flex flex-col items-center text-primary">
+                <div class="w-6 h-6 flex items-center justify-center">
+                    <i class="ri-home-5-line"></i>
+                </div>
+                <span class="text-xs mt-1">首页</span>
+            </div>
+            <div class="flex flex-col items-center text-gray-500">
+                <div class="w-6 h-6 flex items-center justify-center" id="statisticsBtn">
+                    <i class="ri-bar-chart-line"></i>
+                </div>
+                <span class="text-xs mt-1">统计</span>
+            </div>
+            <div class="flex flex-col items-center text-gray-500" id="instructionsBtn">
+                <div class="w-6 h-6 flex items-center justify-center">
+                    <i class="ri-information-line"></i>
+                </div>
+                <span class="text-xs mt-1">说明</span>
+            </div>
+        </div>
+
+        <!-- 添加收支记录弹窗 -->
+        <div id="addTransactionModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+            <div class="bg-white rounded-lg w-5/6 max-w-md p-5">
+                <h3 class="text-lg font-medium mb-4">添加收支记录</h3>
+                <!-- 在添加收支记录弹窗中修改以下部分 -->
+                <div class="mb-4 flex gap-2">
+                    <button id="incomeBtn" class="flex-1 py-2 bg-primary text-white rounded-button">收入</button>
+                    <button id="expenseBtn" class="flex-1 py-2 border border-gray-300 rounded-button text-gray-700">支出</button>
+                    <button id="otherBtn" class="flex-1 py-2 border border-gray-300 rounded-button text-gray-700">其他</button>
+                </div>
+                <div class="mb-4">
+                    <label for="transactionName" class="block text-sm text-gray-600 mb-1">收支项目</label>
+                    <select id="transactionName" class="w-full px-4 py-2 border border-gray-300 rounded-button focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
+                        <!-- 选项将通过JavaScript动态填充 -->
+                    </select>
+                    <input type="text" id="customTransactionName" class="w-full px-4 py-2 border border-gray-300 rounded-button mt-2 hidden" placeholder="请输入自定义项目名称">
+                </div>
+                <div class="mb-4">
+                    <label for="transactionAmount" class="block text-sm text-gray-600 mb-1">金额</label>
+                    <input type="number" id="transactionAmount" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-button focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none" placeholder="请输入金额">
+                </div>
+                <div class="mb-4">
+                    <label for="transactionNote" class="block text-sm text-gray-600 mb-1">备注（可选）</label>
+                    <input type="text" id="transactionNote" class="w-full px-4 py-2 border border-gray-300 rounded-button focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none" placeholder="请输入备注">
+                </div>
+
+                <div class="flex gap-3">
+                    <button id="cancelTransaction" class="flex-1 py-2 border border-gray-300 rounded-button text-gray-700">取消</button>
+                    <button id="confirmTransaction" class="flex-1 bg-primary text-white py-2 rounded-button">确认添加</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新增统计页面链接（放在script之前） -->
+        <a href="statistics.html" id="statisticsLink" target="_blank" hidden></a>
+    </div>
+
+    <script>
+        let appData; // 声明为全局变量
+        let GITHUB_CONFIG = {
+            owner: '',
+            repo: '',
+            token: '',
+            filePath: 'data.json' // 仓库中数据文件的路径
+        };
+
+                // WebDAV同步方法替换为GitHub同步方法
+        const syncWithGitHub = async () => {
+    try {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000
+        });
+        
+        await Toast.fire({ title: '正在启动同步...' });
+        await uploadToGitHub();
+        
+        Swal.fire('同步成功', '数据已上传至GitHub', 'success');
+    } catch (error) {
+        console.error('同步失败:', error);
+        Swal.fire('同步失败', error.message || '请检查配置和网络', 'error');
+    }
+};
+
+
+        // 添加同步按钮点击事件
+        document.getElementById('syncButton').addEventListener('click', () => {
+    if (!GITHUB_CONFIG.token || !GITHUB_CONFIG.repo) {
+        showAuthConfigDialog();
+    } else {
+        syncWithGitHub();
+    }
+});
+
+        // 添加认证配置对话框
+        const showAuthConfigDialog = () => {
+    Swal.fire({
+        title: 'GitHub 配置',
+        html: `
+            <input 
+                id="githubRepo" 
+                class="swal2-input" 
+                placeholder="用户名/仓库名 (例: yourname/repo)"
+                pattern="[^/]+/[^/]+"
+                required
+            >
+            <input 
+                id="githubToken" 
+                class="swal2-input" 
+                type="password" 
+                placeholder="个人访问令牌"
+                required
+            >
+            <input 
+                id="filePath" 
+                class="swal2-input" 
+                placeholder="文件路径 (例: data/account.json)"
+                value="${GITHUB_CONFIG.filePath}"
+            >
+            <p class="text-sm text-gray-500 mt-2">
+                需要创建有repo权限的
+                <a href="https://github.com/settings/tokens" target="_blank" class="text-primary">
+                    GitHub访问令牌
+                </a>
+            </p>
+        `,
+        focusConfirm: false,
+        preConfirm: () => {
+            const repoInput = document.getElementById('githubRepo').value;
+            const [owner, repo] = repoInput.split('/');
+            if (!owner || !repo) {
+                Swal.showValidationMessage('仓库格式应为：用户名/仓库名');
+                return false;
+            }
+            return {
+                owner: owner,
+                repo: repo,
+                token: document.getElementById('githubToken').value,
+                filePath: document.getElementById('filePath').value || 'data.json'
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Object.assign(GITHUB_CONFIG, result.value);
+            syncWithGitHub();
+        }
+    });
+};
+        // 新增积分说明弹窗
+        document.getElementById('instructionsBtn').addEventListener('click', () => {
+            Swal.fire({
+                title: '<div class="instruction-title">📝 个人生活记账系统说明</div>',
+                html: `<div class="text-left">
+        <div class="mb-4">
+        <h3 class="font-bold text-lg mb-2 text-primary">收入项目</h3>
+        <ul class="instruction-list">
+        <li>工资收入</li>
+        <li>个人兼职</li>
+        <li>投资收益</li>
+        </ul>
+        </div>
+
+        <div class="mb-4">
+        <h3 class="font-bold text-lg mb-2 text-primary">支出项目</h3>
+        <ul class="instruction-list">
+        <li>房租水电</li>
+        <li>餐饮消费</li>
+        <li>交通出行</li>
+        <li>购物消费</li>
+        <li>娱乐活动</li>
+        </ul>
+        </div>
+
+        <div class="important-note">
+        <i class="ri-alert-line"></i> 注意事项：
+        <ul class="instruction-list">
+        <li>所有收支记录需如实填写</li>
+        <li>定期查看收支情况，合理规划生活</li>
+        </ul>
+        </div>
+        </div>`,
+                confirmButtonText: '明白啦！',
+                confirmButtonColor: '#4F46E5',
+                width: '90%', // 改为百分比响应式
+                padding: '1.5rem',
+                customClass: {
+                    popup: 'custom-swal-popup', // 添加自定义类名
+                    htmlContainer: 'overflow-auto max-h-[70vh]' // 添加滚动条
+                }
+            });
+        });
+
+        // 修改统计按钮功能
+        document.getElementById('statisticsBtn').addEventListener('click', () => {
+            document.getElementById('statisticsLink').click();
+        });
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // 初始化数据
+            appData = localStorage.getItem('personalAccountingApp')?
+                JSON.parse(localStorage.getItem('personalAccountingApp')) :
+                {
+                    currentUser: 1,
+                    users: {
+                        1: {
+                            name: "用户1",
+                            balance: 0.0,
+                            records: []
+                        },
+                        2: {
+                            name: "用户2",
+                            balance: 0.0,
+                            records: []
+                        }
+                    }
+                };
+            // 转换时间戳
+            Object.values(appData.users).forEach(user => {
+                user.records.forEach(record => {
+                    record.timestamp = new Date(record.timestamp);
+                });
+            });
+
+            // 从本地文件加载数据（这里假设文件名为data.json，可根据实际情况修改）
+            const loadDataFromFile = () => {
+                return new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('GET', 'data.json', true);
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                try {
+                                    const data = JSON.parse(xhr.responseText);
+                                    // 转换时间戳字符串回Date对象
+                                    for (const userId in data.users) {
+                                        data.users[userId].records.forEach(record => {
+                                            record.timestamp = new Date(record.timestamp);
+                                        });
+                                    }
+                                    appData = data;
+                                    resolve();
+                                } catch (e) {
+                                    reject(e);
+                                }
+                            } else {
+                                // 文件不存在或读取失败，使用默认数据
+                                resolve();
+                            }
+                        }
+                    };
+                    xhr.onerror = function () {
+                        reject();
+                    };
+                    xhr.send();
+                });
+            };
+
+            // 保存数据到localStorage
+            const saveData = () => {
+    localStorage.setItem('personalAccountingApp', JSON.stringify(appData));
+    console.log('数据已保存');
+};
+
+            // 更新UI显示
+            const updateUI = () => {
+                const user = appData.users[appData.currentUser];
+
+                // 更新用户卡片
+                document.querySelectorAll('.user-card').forEach(card => {
+                    const userId = parseInt(card.dataset.user);
+                    const userData = appData.users[userId];
+
+                    card.querySelector('.user-balance').textContent = userData.balance.toFixed(1);
+
+                    if (userId === appData.currentUser) {
+                        card.classList.add('active');
+                    } else {
+                        card.classList.remove('active');
+                    }
+                });
+
+                // 更新余额展示
+                document.querySelector('.current-balance').textContent = user.balance.toFixed(1);
+
+                // 更新收支记录
+                renderRecords();
+            };
+
+            // 渲染收支记录
+            const renderRecords = () => {
+                const records = appData.users[appData.currentUser].records;
+                const container = document.getElementById('recordsContainer');
+
+                container.innerHTML = '<div class="record-line"></div>';
+
+                records.forEach(record => {
+                    const date = record.timestamp;
+                    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+                    const recordElement = document.createElement('div');
+                    recordElement.className = 'pl-8 pb-6 relative';
+
+                    let balanceText = `余额: ${record.balance.toFixed(1)}元`;
+
+                    recordElement.innerHTML = `
+            <div class="record-dot"></div>
+            <div class="text-xs text-gray-500 mb-1">${formattedDate}</div>
+            <div class="bg-gray-50 p-3 rounded-lg">
+                <div class="flex justify-between items-center mb-1">
+                    <div class="font-medium">${record.transactionName}</div>
+                    <!-- 修改4：正确显示正负号 -->
+                    <div class="${record.transactionType === 'income'? 'text-primary' : 'text-secondary'} font-medium">
+                        ${record.transactionType === 'income'? '+' : '-'}${record.transactionAmount.toFixed(2)}元
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500">${balanceText}</div>
+                ${record.transactionNote? `<div class="record-note">${record.transactionNote}</div>` : ''}
+            </div>
+        `;
+
+                    container.appendChild(recordElement);
+                });
+            };
+
+            // 添加收支记录
+            const addTransactionRecord = (transactionType,
+                transactionName,
+                transactionAmount,
+                transactionNote = "") => {
+                const user = appData.users[appData.currentUser];
+
+                // 修改3：正确计算余额
+                if (transactionType === 'income') {
+                    user.balance += transactionAmount;
+                } else {
+                    // 包括expense和other类型
+                    user.balance -= transactionAmount;
+                }
+
+                const newRecord = {
+                    transactionType: transactionType,
+                    transactionName: transactionName,
+                    transactionAmount: transactionAmount,
+                    transactionNote: transactionNote,
+                    balance: user.balance,
+                    timestamp: new Date()
+                };
+
+                user.records.unshift(newRecord);
+
+                saveData();
+                updateUI();
+            };
+
+            // 事件监听器
+
+            // 用户切换
+            document.querySelectorAll('.user-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    appData.currentUser = parseInt(card.dataset.user);
+                    updateUI();
+                });
+            });
+
+            // 添加收支记录按钮
+            document.getElementById('addTransactionBtn').addEventListener('click', () => {
+                const modal = document.getElementById('addTransactionModal');
+                document.getElementById('transactionName').value = '';
+                document.getElementById('transactionAmount').value = '';
+                document.getElementById('transactionNote').value = '';
+                modal.classList.remove('hidden');
+            });
+            document.getElementById('transactionName').addEventListener('change', function () {
+                if (this.value === '其他') {
+                    document.getElementById('customTransactionName').classList.remove('hidden');
+                } else {
+                    document.getElementById('customTransactionName').classList.add('hidden');
+                }
+            });
+            // 确认添加收支记录按钮
+            document.getElementById('confirmTransaction').addEventListener('click', () => {
+                const activeButton = document.querySelector('button.active');
+                if (!activeButton) {
+                    alert('请选择收支类型');
+                    return;
+                }
+                const transactionType = activeButton.id.replace('Btn', '');
+
+                let transactionName = '';
+                // 统一处理所有类型的自定义输入
+                if (document.getElementById('transactionName').value === '其他') {
+                    transactionName = document.getElementById('customTransactionName').value.trim();
+                    if (!transactionName) {
+                        alert('请输入自定义项目名称');
+                        return;
+                    }
+                } else if (transactionType === 'other') {
+                    transactionName = document.getElementById('customTransactionName').value.trim();
+                    if (!transactionName) {
+                        alert('请输入项目名称');
+                        return;
+                    }
+                } else {
+                    transactionName = document.getElementById('transactionName').value.trim();
+                }
+
+                const transactionAmount = parseFloat(document.getElementById('transactionAmount').value);
+                const transactionNote = document.getElementById('transactionNote').value.trim();
+
+                if (isNaN(transactionAmount) || transactionAmount <= 0) {
+                    alert('请输入有效的金额');
+                    return;
+                }
+
+                addTransactionRecord(transactionType, transactionName, transactionAmount, transactionNote);
+                document.getElementById('addTransactionModal').classList.add('hidden');
+            });
+
+            // 取消添加收支记录按钮
+            document.getElementById('cancelTransaction').addEventListener('click',
+                () => {
+                    document.getElementById('addTransactionModal').classList.add('hidden');
+                });
+
+            // 导出数据按钮
+            document.getElementById('exportData').addEventListener('click', () => {
+                saveData(); // 确保保存最新数据
+
+                const dataStr = JSON.stringify({
+                   ...appData,
+                    exportTime: new Date().toISOString(),
+                    version: '1.1'
+                }, null, 2);
+
+                try {
+                    const blob = new Blob([dataStr], {
+                        type: 'application/json;charset=utf-8'
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `个人生活记账备份_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        Swal.fire({
+                            icon:'success',
+                            title: '备份成功',
+                            text: '数据文件已开始下载',
+                            confirmButtonColor: '#4F46E5',
+                            timer: 2000
+                        });
+                    }, 100);
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '导出失败',
+                        text: '请尝试使用现代浏览器操作',
+                        confirmButtonColor: '#EF4444'
+                    });
+                }
+            });
+
+            // 主题切换
+            document.getElementById('themeToggle').addEventListener('click',
+                () => {
+                    const icon = document.getElementById('themeToggle').querySelector('i');
+                    document.body.classList.toggle('dark-mode');
+
+                    if (document.body.classList.contains('dark-mode')) {
+                        icon.classList.replace('ri-moon-line', 'ri-sun-line');
+                    } else {
+                        icon.classList.replace('ri-sun-line', 'ri-moon-line');
+                    }
+                });
+
+            // 加载更多按钮
+            document.getElementById('loadMoreBtn').addEventListener('click',
+                () => {
+                    // 这里可以实现加载更多记录的逻辑
+                    alert('已加载全部记录');
+                });
+
+                        // 收支类型按钮事件监听器
+            document.getElementById('incomeBtn').addEventListener('click', () => {
+                document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                document.getElementById('incomeBtn').classList.add('active');
+                const transactionNameSelect = document.getElementById('transactionName');
+                transactionNameSelect.innerHTML = `
+    <option value="工资收入🧰">工资收入🧰</option>
+    <option value="个人兼职💴">个人兼职💴</option>
+    <option value="投资收益💰">投资收益💰</option>
+    <option value="其他">其他</option>
+  `;
+                // 新增：隐藏自定义输入框
+                document.getElementById('customTransactionName').classList.add('hidden');
+                transactionNameSelect.classList.remove('hidden');
+            });
+
+            document.getElementById('expenseBtn').addEventListener('click', () => {
+                document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                document.getElementById('expenseBtn').classList.add('active');
+                const transactionNameSelect = document.getElementById('transactionName');
+                transactionNameSelect.innerHTML = `
+    <option value="房租水电🏡">房租水电🏡</option>
+    <option value="餐饮消费🍝">餐饮消费🍝</option>
+    <option value="宽带话费☎️">宽带话费☎️</option>
+    <option value="交通出行🛵">交通出行🛵</option>
+    <option value="购物消费🛍️">购物消费🛍️</option>
+    <option value="娱乐活动🎡">娱乐活动🎡</option>
+    <option value="看病吃药💊">看病吃药💊</option>
+    <option value="家庭转账👫">家庭转账👫</option>
+    <option value="个人护理💇🏻‍♂️">个人护理💇🏻‍♂️</option>
+    <option value="人情礼物🎁">人情礼物🎁</option>
+    <option value="聚会聚餐🎉">聚会聚餐🎉</option>
+    <option value="其他">其他（可输入）</option>
+  `;
+                transactionNameSelect.classList.remove('hidden');
+                document.getElementById('customTransactionName').classList.add('hidden');
+            });
+
+            document.getElementById('otherBtn').addEventListener('click', () => {
+                document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                document.getElementById('otherBtn').classList.add('active');
+                // 其他类型直接显示输入框
+                document.getElementById('transactionName').classList.add('hidden');
+                document.getElementById('customTransactionName').classList.remove('hidden');
+            });
+
+            // 初始化，先从文件加载数据，再更新UI
+            loadDataFromFile()
+               .then(() => {
+                    updateUI();
+                    // 页面加载完成后自动打开说明弹窗
+                    document.getElementById('instructionsBtn').click();
+                })
+               .catch((error) => {
+                    console.error('Failed to load data from file:', error);
+                });
+        });
+    </script>
+</body>
+
+</html>

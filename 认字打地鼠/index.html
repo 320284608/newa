@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>佳恒📝认字打地鼠游戏🔨</title>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  <script>
+    // Firebase配置
+    const firebaseConfig = {
+      apiKey: "AIzaSyA4B1hpFsq2E-CZD6m1iphhzRjByv-1bcI",
+      authDomain: "literacy-whack-a-mole-e9486.firebaseapp.com",
+      databaseURL: "https://literacy-whack-a-mole-e9486-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "literacy-whack-a-mole-e9486",
+      storageBucket: "literacy-whack-a-mole-e9486.firebasestorage.app",
+      messagingSenderId: "7840821292",
+      appId: "1:7840821292:web:cfd6cf2d4e3ae90e0ee189"
+    };
+    
+    // 初始化Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FF6B6B',
+            secondary: '#4ECDC4'
+          },
+          borderRadius: {
+            'none': '0px',
+            'sm': '4px',
+            DEFAULT: '8px',
+            'md': '12px',
+            'lg': '16px',
+            'xl': '20px',
+            '2xl': '24px',
+            '3xl': '32px',
+            'full': '9999px',
+            'button': '8px'
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
+  <style>
+    :where([class^="ri-"])::before {
+      content: "\f3c2";
+    }
+
+    body {
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      height: 762px;
+      width: 375px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mole {
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform: translateY(100%);
+      visibility: hidden;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 10px;
+    }
+
+    .mole.active {
+      transform: translateY(40%);
+      visibility: visible;
+    }
+
+    .word-bubble {
+      background: white;
+      border-radius: 12px;
+      padding: 4px 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      z-index: 1;
+    }
+
+    .hole {
+      position: relative;
+      overflow: hidden;
+      border-radius: 50%;
+      background: radial-gradient(circle at center 70%, #5a3921, #3a2410);
+      box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .score-animation {
+      position: absolute;
+      animation: float-up 1s forwards;
+      pointer-events: none;
+    }
+
+    @keyframes float-up {
+      0% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+    }
+
+    .particles {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      animation: particle-animation 0.8s forwards;
+    }
+
+    @keyframes particle-animation {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translate(var(--tx), var(--ty)) scale(0);
+      }
+    }
+
+    .modal-backdrop {
+      backdrop-filter: blur(5px);
+    }
+
+    .word-bubble {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border-radius: 12px;
+      padding: 4px 12px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      min-width: max-content;
+      z-index: 2;
+    }
+
+    .word-bubble:after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid white;
+    }
+
+    .theme-btn.selected {
+      box-shadow: 0 0 0 2px currentColor;
+    }
+
+    .mole {
+      background-color: transparent !important;
+    }
+
+    .mole div[class^="text-"] {
+      color: var(--mole-color);
+    }
+
+    .push-section {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #send-push {
+      transition: all 0.3s ease;
+    }
+
+    #send-push:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    #send-push:active {
+      transform: scale(0.98);
+    }
+
+    #start-screen {
+      z-index: 50;
+    }
+
+    #settings-panel {
+      z-index: 60;
+    }
+
+    #target-word-container.hidden-word #target-word {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #target-word-container.hidden-word::after {
+      content: "点击听发音";
+      display: block;
+      font-size: 0.75rem;
+      color: #666;
+    }
+    
+    /* 文字样式 */
+    #target-word {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #2d3748;
+        letter-spacing: 2px;
+    }
+
+    .word-bubble {
+        font-size: 1.2rem;
+        padding: 8px 12px;
+        min-width: 3em;
+        line-height: 1.5;
+        font-weight: 500;
+    }
+
+    .word-bubble:after {
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-top: 10px solid white;
+        bottom: -10px;
+    }
+
+    #timer, #score {
+        font-size: 1.8rem;
+        min-width: 2em;
+        text-align: center;
+    }
+
+    #difficulty-indicator {
+        font-size: 1.1rem;
+        padding: 6px 16px;
+    }
+
+    /* 结算界面 */
+    #final-score {
+        font-size: 3.5rem;
+        margin: 10px 0;
+    }
+    
+    /* 设置面板 */
+    #settings-panel .text-lg {
+        font-size: 1.3rem;
+    }
+    
+    .difficulty-btn, .speed-btn {
+        font-size: 1rem;
+        padding: 8px 16px;
+    }
+
+    /* 开始界面 */
+    .font-['Pacifico'] {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    #start-screen h1 {
+        font-size: 2.2rem;
+        margin-bottom: 2rem;
+    }
+
+    /* 按钮样式 */
+    #play-again, #back-home, #send-push,
+    #start-game, #open-settings {
+        font-size: 1.1rem;
+        padding: 12px 20px;
+    }
+
+    /* 排行榜样式 */
+    #leaderboard-panel {
+      z-index: 70;
+    }
+    
+    #leaderboard-list {
+      max-height: 50vh;
+      overflow-y: auto;
+    }
+    
+    .leaderboard-item {
+      transition: all 0.2s;
+    }
+    
+    .leaderboard-item:hover {
+      transform: scale(1.02);
+    }
+    
+    /* 输入框样式 */
+    #player-name {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s;
+    }
+    
+    #player-name:focus {
+      border-color: #4ECDC4;
+      box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.2);
+    }
+    /* 在现有样式中添加 */
+.leaderboard-item {
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #e2e8f0;
+}
+
+.leaderboard-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.text-amber-700 { color: #b45309; }
+  </style>
+</head>
+
+<body class="bg-gray-50 relative">
+  <!-- 顶部状态栏 -->
+  <div class="fixed top-0 w-full theme-nav shadow-md z-50 px-4 py-2 flex items-center justify-between">
+    <div class="flex items-center">
+      <div class="w-10 h-10 flex items-center justify-center bg-primary rounded-full text-white mr-2">
+        <i class="ri-time-line ri-lg"></i>
+      </div>
+      <div id="timer" class="text-xl font-bold">
+        60
+      </div>
+    </div>
+    <div id="target-word-container" class="flex flex-col items-center relative hidden-word">
+      <div id="target-word">学</div>
+    </div>
+    <div class="flex items-center">
+      <div class="w-10 h-10 flex items-center justify-center bg-primary rounded-full text-white mr-2">
+        <i class="ri-medal-line ri-lg"></i>
+      </div>
+      <div id="score" class="text-xl font-bold">
+        0
+      </div>
+    </div>
+  </div>
+
+  <!-- 难度指示器 -->
+  <div class="fixed top-16 w-full flex justify-center z-40 mt-2">
+    <div class="bg-white rounded-full px-4 py-1 shadow-md">
+      <span id="difficulty-indicator" class="text-sm font-medium">初级</span>
+    </div>
+  </div>
+
+  <!-- 主游戏区域 -->
+  <div class="pt-28 pb-20 px-4">
+    <div id="game-container" class="grid grid-cols-3 gap-3">
+      <!-- 洞穴将通过JS动态生成 -->
+    </div>
+  </div>
+
+  <!-- 底部控制栏 -->
+  <div class="fixed bottom-0 w-full theme-nav shadow-lg z-50 px-4 py-3 flex justify-around">
+    <button id="restart-btn" class="w-12 h-12 flex items-center justify-center bg-primary text-white rounded-full shadow-md cursor-pointer">
+      <i class="ri-restart-line ri-lg"></i>
+    </button>
+    <button id="home-btn" class="w-12 h-12 flex items-center justify-center bg-primary text-white rounded-full shadow-md cursor-pointer">
+      <i class="ri-home-line ri-lg"></i>
+    </button>
+    <button id="settings-btn" class="w-12 h-12 flex items-center justify-center bg-primary text-white rounded-full shadow-md cursor-pointer">
+      <i class="ri-settings-line ri-lg"></i>
+    </button>
+    <button id="speed-btn" class="w-12 h-12 flex items-center justify-center bg-primary text-white rounded-full shadow-md cursor-pointer">
+      <i class="ri-speed-line ri-lg"></i>
+    </button>
+  </div>
+
+  <!-- 设置面板 -->
+  <div id="settings-panel" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg w-4/5 p-5">
+      <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold">设置</h3>
+      <button id="close-settings" class="w-8 h-8 flex items-center justify-center cursor-pointer">
+        <i class="ri-close-line ri-lg"></i>
+      </button>
+    </div>
+    <!-- 在原有设置项后添加 -->
+    <div class="mt-6 border-t pt-4">
+      <p class="mb-2 font-medium">其他功能</p>
+      <button id="view-leaderboard-settings" 
+              class="w-full bg-purple-500 text-white py-2 rounded-lg font-medium cursor-pointer flex items-center justify-center">
+        <i class="ri-bar-chart-line mr-2"></i>查看排行榜
+      </button>
+    </div>
+      <div class="mb-4">
+        <p class="mb-2 font-medium">显示设置</p>
+        <div class="flex items-center space-x-2">
+          <button id="toggle-word" class="flex items-center px-3 py-1 bg-white border border-gray-300 rounded-full cursor-pointer">
+            <i class="ri-eye-off-line mr-1"></i>
+            <span>隐藏目标文字</span>
+          </button>
+        </div>
+        <p class="mb-2 font-medium">主题</p>
+        <div class="flex space-x-2">
+          <button class="theme-btn px-3 py-1 border rounded-full cursor-pointer transition-all" data-theme="light" style="background-color: #f8fafc; color: #1a1a1a">
+            默认
+          </button>
+          <button class="theme-btn px-3 py-1 border rounded-full cursor-pointer transition-all" data-theme="dark" style="background-color: #1f2937; color: #f3f4f6">
+            夜间
+          </button>
+          <button class="theme-btn px-3 py-1 border rounded-full cursor-pointer transition-all" data-theme="eye" style="background-color: #DCE6C6; color: #3E5915">
+            护眼
+          </button>
+          <button class="theme-btn px-3 py-1 border rounded-full cursor-pointer transition-all" data-theme="colorful" style="background: linear-gradient(135deg, #f3e8ff, #ffe4e6, #fff1e6); color: #1a1a1a">
+            多彩
+          </button>
+        </div>
+      </div>
+      <div class="mb-4">
+        <p class="mb-2 font-medium">难度</p>
+        <div class="flex flex-wrap gap-2">
+          <button class="difficulty-btn px-3 py-1 bg-white border border-gray-300 rounded-full !rounded-button cursor-pointer" data-level="1">初级</button>
+          <button class="difficulty-btn px-3 py-1 bg-white border border-gray-300 rounded-full !rounded-button cursor-pointer" data-level="2">中级</button>
+          <button class="difficulty-btn px-3 py-1 bg-white border border-gray-300 rounded-full !rounded-button cursor-pointer" data-level="3">高级</button>
+          <button class="difficulty-btn px-3 py-1 bg-white border border-gray-300 rounded-full !rounded-button cursor-pointer" data-level="4">进阶</button>
+          <button class="difficulty-btn px-3 py-1 bg-white border border-gray-300 rounded-full !rounded-button cursor-pointer" data-level="5">终极</button>
+        </div>
+      </div>
+      <div>
+        <p class="mb-2 font-medium">速度</p>
+        <div class="flex space-x-2">
+          <button class="speed-btn px-3 py-1 bg-white border border-gray-300 rounded-full !rounded-button cursor-pointer" data-speed="slow">慢速</button>
+          <button class="speed-btn px-3 py-1 bg-white border border-gray-300 rounded-full !rounded-button cursor-pointer" data-speed="medium">中速</button>
+          <button class="speed-btn px-3 py-1 bg-white border border-gray-300 rounded-full !rounded-button cursor-pointer" data-speed="fast">快速</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 速度调节面板 -->
+  <div id="speed-panel" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg w-4/5 p-5">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold">速度调节</h3>
+        <button id="close-speed" class="w-8 h-8 flex items-center justify-center cursor-pointer">
+          <i class="ri-close-line ri-lg"></i>
+        </button>
+      </div>
+      <div class="flex flex-col space-y-4">
+        <button class="speed-select px-4 py-2 bg-white border border-gray-300 rounded-lg !rounded-button flex items-center justify-between cursor-pointer" data-speed="slow">
+          <span>慢速</span>
+          <i class="ri-check-line ri-lg text-primary hidden"></i>
+        </button>
+        <button class="speed-select px-4 py-2 bg-white border border-gray-300 rounded-lg !rounded-button flex items-center justify-between cursor-pointer" data-speed="medium">
+          <span>中速</span>
+          <i class="ri-check-line ri-lg text-primary"></i>
+        </button>
+        <button class="speed-select px-4 py-2 bg-white border border-gray-300 rounded-lg !rounded-button flex items-center justify-between cursor-pointer" data-speed="fast">
+          <span>快速</span>
+          <i class="ri-check-line ri-lg text-primary hidden"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结算界面 -->
+  <div id="result-panel" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg w-4/5 p-5">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold mb-2">游戏结束</h2>
+        <div class="text-4xl font-bold text-primary mb-2" id="final-score">
+          0
+        </div>
+        <div class="text-sm text-gray-500">
+          你的得分
+        </div>
+      </div>
+      <div class="space-y-3 mb-6">
+        <div class="flex justify-between">
+          <span class="text-gray-600">用时</span>
+          <span id="result-time" class="font-medium">60秒</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">正确率</span>
+          <span id="result-accuracy" class="font-medium">0%</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">难度</span>
+          <span id="result-difficulty" class="font-medium">初级</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">最高连击</span>
+          <span id="result-combo" class="font-medium">0</span>
+        </div>
+      </div>
+      <div class="flex space-x-3">
+        <button id="play-again" class="flex-1 bg-primary text-white py-2 rounded-lg !rounded-button font-medium cursor-pointer">再玩一次</button>
+        <button id="back-home" class="flex-1 bg-gray-100 py-2 rounded-lg !rounded-button font-medium cursor-pointer">返回首页</button>
+      </div>
+      <div class="push-section mt-4">
+        <div class="text-sm text-gray-600 mb-2" id="push-message"></div>
+        <input type="text" id="player-name" class="w-full mb-2 p-2 border rounded-lg" placeholder="输入你的名字" maxlength="10">
+        <button id="submit-score" class="w-full bg-blue-500 text-white py-2 rounded-lg font-medium cursor-pointer">
+          <i class="ri-trophy-line mr-2"></i>提交到排行榜
+        </button>
+        <button id="view-leaderboard" class="w-full mt-2 bg-purple-500 text-white py-2 rounded-lg font-medium cursor-pointer">
+          <i class="ri-bar-chart-line mr-2"></i>查看排行榜
+        </button>
+        <button id="send-push" class="w-full mt-2 bg-green-500 text-white py-2 rounded-lg font-medium cursor-pointer">
+          <i class="ri-send-plane-line mr-2"></i>发送成绩给家长
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 排行榜面板 -->
+  <div id="leaderboard-panel" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg w-4/5 p-5 max-h-[70vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold">排行榜</h3>
+        <button id="close-leaderboard" class="w-8 h-8 flex items-center justify-center cursor-pointer">
+          <i class="ri-close-line ri-lg"></i>
+        </button>
+      </div>
+      <div id="leaderboard-list" class="space-y-2">
+        <!-- 排行榜内容动态加载 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 开始界面 -->
+  <div id="start-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+    <div class="font-['Pacifico'] text-4xl text-primary mb-4">
+      曦水恒流
+    </div>
+    <h1 class="text-2xl font-bold mb-6">认字打地鼠</h1>
+    <div class="w-64 h-64 mb-8 relative">
+      <img src="1.img" alt="地鼠形象" class="w-full h-full object-contain">
+    </div>
+    <div class="w-64 mb-4">
+      <p class="text-sm font-medium mb-2">选择难度</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button class="start-difficulty px-2 py-1 bg-gray-100 rounded-lg" data-level="1">初级</button>
+        <button class="start-difficulty px-2 py-1 bg-gray-100 rounded-lg" data-level="2">中级</button>
+        <button class="start-difficulty px-2 py-1 bg-gray-100 rounded-lg" data-level="3">高级</button>
+        <button class="start-difficulty px-2 py-1 bg-gray-100 rounded-lg" data-level="4">进阶</button>
+        <button class="start-difficulty px-2 py-1 bg-gray-100 rounded-lg" data-level="5">终极</button>
+      </div>
+    </div>
+    <div class="space-y-4 w-64">
+      <button id="start-game" class="w-full bg-primary text-white py-3 rounded-lg !rounded-button font-medium text-lg cursor-pointer shadow-md">开始游戏</button>
+      <button id="open-settings" class="w-full bg-gray-100 py-3 rounded-lg !rounded-button font-medium text-lg cursor-pointer">游戏设置</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 游戏数据
+      const gameData = {
+        level1: ["学", "习", "好", "人", "大", "小", "上", "下", "中", "国", "天", "地", "日", "月", "水", "火", "山", "木", "口", "手", "心", "目", "耳", "鼻", "家", "书", "车", "门", "鱼", "鸟", "虫", "马", "牛", "羊", "猫", "狗", "兔", "龙", "花", "草", "树", "米", "面", "菜", "果", "茶", "水", "风", "雨", "雪", "云", "电", "路", "桥", "海", "河", "湖", "江", "城", "爸", "妈", "爷", "奶", "哥", "姐", "弟", "妹", "桌", "椅", "床", "被", "枕", "灯", "笔", "纸", "本", "刀", "尺", "球", "拍", "绳", "钟", "表", "伞", "帽", "衣", "裤", "鞋", "袜", "锅", "碗", "筷", "勺", "叉", "瓶", "杯", "盘", "盆", "桶", "袋", "包", "箱", "锁", "钥", "钉", "锤", "斧", "锯", "锄", "镰", "梯", "凳", "梯", "扇", "镜", "梳", "刷", "皂", "香", "油", "盐", "糖", "酱", "醋", "奶", "蛋", "豆", "瓜", "茄", "椒", "葱", "姜", "蒜", "药", "针", "线", "布", "毛", "皮", "石", "沙", "土", "泥", "灰", "烟", "雾", "冰", "霜", "星", "辰", "光", "明", "暗", "黑", "白", "红", "绿", "黄", "蓝", "紫", "橙", "粉", "棕", "灰", "金", "银", "桌", "椅", "床", "柜", "窗", "帘", "钟", "表", "画", "书", "架", "笔", "墨", "纸", "砚", "琴", "棋", "书", "画", "花", "鸟", "鱼", "虫", "山", "水", "云", "霞", "雷", "电", "风", "雨", "雪", "霜", "冰", "火", "土", "石", "金", "木", "水", "火", "土", "日", "月", "星", "空", "海", "洋", "河", "江", "湖", "溪", "谷", "峰", "岭", "丘", "原", "川", "田", "园", "林", "森", "果", "蔬", "粮", "谷", "豆", "米", "面", "油", "盐", "糖", "酱", "醋", "茶", "酒", "奶", "蛋", "肉", "鱼", "虾", "蟹", "贝", "菇", "菌", "药", "材", "花", "草", "树", "木", "根", "茎", "叶", "枝", "芽", "蕾", "籽", "皮", "毛", "羽", "角", "牙", "骨", "血", "肉", "心", "肝", "脾", "肺", "肾", "肠", "胃", "脑", "眼", "耳", "鼻", "嘴", "舌", "牙", "唇", "手", "足", "腿", "臂", "肩", "背", "腰", "肚", "膝", "肘", "腕", "指", "趾", "发", "须", "眉", "汗", "泪", "涕", "屎", "尿", "屁", "声", "音", "歌", "舞", "诗", "词", "书", "文", "字", "数", "理", "化", "生", "地", "历", "政", "美", "体", "劳", "科", "技", "网", "电", "机", "车", "船", "飞", "炮", "枪", "弹", "药", "兵", "将", "帅", "国", "家", "民", "族", "党", "社", "会", "法", "律", "规", "则", "公", "平", "正", "义", "道", "德", "礼", "仪", "廉", "耻", "荣", "辱", "富", "贫", "贵", "贱", "福", "祸", "吉", "凶", "喜", "怒", "哀", "乐"],
+        level2: ["学习", "工作", "生活", "朋友", "家人", "老师", "学生", "医生", "警察", "司机", "商店", "公园", "学校", "医院", "银行", "餐厅", "电影", "音乐", "运动", "游戏", "电脑", "手机", "电视", "汽车", "飞机", "火车", "地铁", "公交", "早餐", "午餐", "晚餐", "水果", "蔬菜", "肉类", "海鲜", "甜点", "饮料", "咖啡", "茶叶", "天气", "季节", "春天", "夏天", "秋天", "冬天", "节日", "生日", "新年", "中秋", "国庆"],
+        level3: ["一帆风顺", "万事如意", "四面八方", "五光十色", "六神无主", "七上八下", "八面玲珑", "九牛一毛", "十全十美", "百发百中", "千方百计", "万紫千红", "三心二意", "半信半疑", "自言自语", "自作自受", "大手大脚", "东张西望", "南辕北辙", "左思右想", "一马当先", "二话不说", "三言两语", "四通八达", "五花八门", "六六大顺", "七嘴八舌", "八仙过海", "九死一生", "十拿九稳", "百依百顺", "千变万化", "万无一失", "一穷二白", "一清二楚", "一干二净", "一了百了", "一呼百应", "一唱一和", "一颦一笑", "一草一木", "一点一滴", "一生一世", "一年一度", "一五一十", "一模一样", "一朝一夕", "一针一线", "一字一句", "一步一趋", "一瘸一拐", "一知半解", "一落千丈", "一曝十寒", "一丘之貉", "一视同仁", "一厢情愿", "一意孤行", "一蹴而就", "一败涂地", "一本正经", "一笔勾销", "一臂之力", "一尘不染", "一成不变", "一筹莫展", "一触即发", "一锤定音", "一蹶不振", "一技之长", "一家之言", "一见钟情", "一箭双雕", "一举成名", "一举两得", "一蹶不振", "一览无余", "一劳永逸", "一马平川", "一脉相承", "一面之词", "一鸣惊人", "一目了然", "一贫如洗", "一气呵成", "一窍不通", "一如既往", "一扫而空", "一身是胆", "一塌糊涂", "一通百通", "一网打尽", "一往情深", "一望无际", "一文不值", "一无是处", "一无所获", "一无所有", "一无所知", "一泻千里", "一衣带水", "一意孤行", "一语道破", "一语双关", "一张一弛", "一朝天子一朝臣"],
+        level4: ["一举两得", "四面八方", "五颜六色", "七上八下", "九牛一毛", "十全十美", "百发百中", "千变万化", "万紫千红", "三心二意", "半信半疑", "自言自语", "自作自受", "前因后果", "东张西望", "南辕北辙", "左思右想", "有始有终", "无影无踪", "天长地久", "一马当先", "二话不说", "三言两语", "四通八达", "五花八门", "六六大顺", "七嘴八舌", "八仙过海", "九死一生", "十拿九稳", "百依百顺", "千变万化", "万无一失", "一穷二白", "一清二楚", "一干二净", "一了百了", "一呼百应", "一唱一和", "一颦一笑", "一草一木", "一点一滴", "一生一世", "一年一度", "一五一十", "一模一样", "一朝一夕", "一针一线", "一字一句", "一步一趋", "一瘸一拐", "一知半解", "一落千丈", "一曝十寒", "一丘之貉", "一视同仁", "一厢情愿", "一意孤行", "一蹴而就", "一败涂地", "一本正经", "一笔勾销", "一臂之力", "一尘不染", "一成不变", "一筹莫展", "一触即发", "一锤定音", "一蹶不振", "一技之长", "一家之言", "一见钟情", "一箭双雕", "一举成名", "一举两得", "一蹶不振", "一览无余", "一劳永逸", "一马平川", "一脉相承", "一面之词", "一鸣惊人", "一目了然", "一贫如洗", "一气呵成", "一窍不通", "一如既往", "一扫而空", "一身是胆", "一塌糊涂", "一通百通", "一网打尽", "一往情深", "一望无际", "一文不值", "一无是处", "一无所获", "一无所有", "一无所知", "一泻千里", "一衣带水", "一意孤行", "一语道破", "一语双关", "一张一弛", "一朝天子一朝臣", "走马观花", "望梅止渴", "掩耳盗铃", "守株待兔", "刻舟求剑", "叶公好龙", "画蛇添足", "画龙点睛", "滥竽充数", "自相矛盾", "亡羊补牢", "坐井观天", "狐假虎威", "黔驴技穷", "买椟还珠", "邯郸学步", "东施效颦", "螳臂当车", "蚍蜉撼树", "飞蛾扑火", "金蝉脱壳", "蜻蜓点水", "蛛丝马迹", "螳螂捕蝉黄雀在后", "鹬蚌相争渔翁得利", "塞翁失马焉知非福", "城门失火殃及池鱼", "近水楼台先得月", "树欲静而风不止", "子欲养而亲不待", "小不忍则乱大谋", "勿以恶小而为之勿以善小而不为", "近朱者赤近墨者黑", "出淤泥而不染", "濯清涟而不妖", "得道多助失道寡助", "天时不如地利地利不如人和", "居安思危", "未雨绸缪", "防患未然", "临渊羡鱼不如退而结网", "纸上谈兵", "望洋兴叹", "高瞻远瞩", "高屋建瓴", "高朋满座", "高枕无忧", "高谈阔论", "高风亮节", "高山仰止", "高山流水", "高抬贵手", "高不可攀", "高不成低不就", "兴高采烈", "趾高气扬", "眉飞色舞", "眉开眼笑", "眉来眼去", "眉清目秀", "眉飞色舞", "扬眉吐气", "迫在眉睫", "燃眉之急", "愁眉苦脸", "愁眉不展", "慈眉善目", "贼眉鼠眼", "挤眉弄眼", "低眉顺眼", "横眉冷对", "举案齐眉", "百媚千娇", "千娇百媚", "婀娜多姿", "亭亭玉立", "出水芙蓉", "冰肌玉骨", "冰清玉洁", "闭月羞花", "沉鱼落雁", "国色天香", "倾国倾城", "花容月貌", "如花似玉", "美若天仙", "天生丽质", "秀色可餐", "小家碧玉", "大家闺秀", "豆蔻年华", "及笄之年", "破瓜之年", "桃李年华", "花信年华", "摽梅之年", "半老徐娘", "风韵犹存", "徐娘半老", "人老珠黄", "老态龙钟", "鹤发童颜", "白发苍苍", "面黄肌瘦", "面如土色", "面红耳赤", "面面相觑", "面目全非", "面目可憎", "满面春风", "满面红光", "愁眉苦脸", "嬉皮笑脸", "嬉皮笑脸", "嘻皮笑脸", "皮笑肉不笑"],
+        level5: ["龘", "鬻", "鑫", "麤", "齉", "鸯", "鬣", "鱻", "鬟", "鸾", "饕", "餮", "曱", "甴", "囹", "圄", "魑", "魅", "魍", "魉", "耄", "耋", "饕", "餮", "囫", "囵", "孑", "孓", "逡", "巡", "旮", "旯", "彳", "亍", "氍", "毹", "氙", "氚", "氡", "氪", "氖", "氩", "氤", "氲", "甙", "肼", "肟", "甾", "砼", "羟", "羧", "巯", "砼", "瓩", "兛", "兞", "兝", "兡", "嗧", "瓧", "瓰", "甅", "甂", "甁", "甉", "甈", "甊", "甋", "甍", "甏", "甑", "甒", "甓", "甔", "甗", "鬶", "鬲", "甗", "匽", "匜", "匞", "匛", "匞", "匟", "匢", "匤", "匥", "匦", "匼", "匽", "匨", "匩", "匫", "匬", "匭", "匯", "匰", "匱", "匲", "匳", "匴", "匵", "匶", "匷", "匸", "匹", "匼", "匝", "匽", "匯", "匮", "匵", "匶", "匷", "匸", "匹", "匼", "匝"]
+      };
+
+      // 游戏状态
+      let gameState = {
+        isPlaying: false,
+        score: 0,
+        timer: 60,
+        targetWord: "",
+        correctHits: 0,
+        totalHits: 0,
+        combo: 0,
+        maxCombo: 0,
+        difficulty: 1,
+        speed: "medium",
+        theme: "light",
+        wordList: [],
+        activeMoles: [],
+        hasPushed: false,
+        showTargetWord: false,
+        audioLoop: null,
+        isAudioPlaying: false,
+        timerInterval: null,
+        moleTimer: null,
+        hasSubmittedScore: false
+      };
+
+      // 速度配置（毫秒）
+      const speedConfig = {
+        slow: {
+          min: 5000,
+          max: 6000
+        },
+        medium: {
+          min: 3000,
+          max: 4000
+        },
+        fast: {
+          min: 2000,
+          max: 3000
+        }
+      };
+
+      // 难度配置
+      const difficultyConfig = {
+        1: {
+          name: "初级",
+          time: 60,
+          molesPerRound: 2
+        },
+        2: {
+          name: "中级",
+          time: 60,
+          molesPerRound: 3
+        },
+        3: {
+          name: "高级",
+          time: 60,
+          molesPerRound: 3
+        },
+        4: {
+          name: "进阶",
+          time: 60,
+          molesPerRound: 4
+        },
+        5: {
+          name: "终极",
+          time: 60,
+          molesPerRound: 4
+        }
+      };
+
+      // 主题配置
+      const themeConfig = {
+        light: {
+          bg: "#f8fafc",
+          nav: "#ffffff",
+          text: "#1a1a1a",
+          border: "#e2e8f0",
+          mole: "#8B4513"
+        },
+        dark: {
+          bg: "#111827",
+          nav: "#1f2937",
+          text: "#f3f4f6",
+          border: "#374151",
+          mole: "#4A4A4A"
+        },
+        eye: {
+          bg: "#E3EDCD",
+          nav: "#DCE6C6",
+          text: "#3E5915",
+          border: "#C8D4B2",
+          mole: "#7A8B69"
+        },
+        colorful: {
+          bg: "linear-gradient(135deg, #f3e8ff 0%, #ffe4e6 50%, #fff1e6 100%)",
+          nav: "rgba(255,255,255,0.9)",
+          text: "#1a1a1a",
+          border: "#e9d5ff",
+          mole: "#9C27B0"
+        }
+      };
+
+      // 配置WxPusher参数
+      const wxPusherConfig = {
+        appToken: 'AT_zPtKeskSAdhMLh2y62ylBQsjY9WvPGr4',
+        successScore: {
+          1: 8500,
+          2: 1000,
+          3: 3800,
+          4: 3800,
+          5: 1000
+        },
+        uids: ['UID_C74d13AbUID9y5zJPAL9nTdv8cNy']
+      };
+
+      // DOM元素
+      const gameContainer = document.getElementById('game-container');
+      const scoreElement = document.getElementById('score');
+      const timerElement = document.getElementById('timer');
+      const targetWordElement = document.getElementById('target-word');
+      const difficultyIndicator = document.getElementById('difficulty-indicator');
+      const settingsPanel = document.getElementById('settings-panel');
+      const speedPanel = document.getElementById('speed-panel');
+      const resultPanel = document.getElementById('result-panel');
+      const startScreen = document.getElementById('start-screen');
+      const finalScoreElement = document.getElementById('final-score');
+      const resultTimeElement = document.getElementById('result-time');
+      const resultAccuracyElement = document.getElementById('result-accuracy');
+      const resultDifficultyElement = document.getElementById('result-difficulty');
+      const resultComboElement = document.getElementById('result-combo');
+      const leaderboardPanel = document.getElementById('leaderboard-panel');
+      const leaderboardList = document.getElementById('leaderboard-list');
+
+      // 音频元素
+      const correctSound = new Audio('audio/correct.mp3');
+      const wrongSound = new Audio('audio/wrong.mp3');
+      let wordSound = new Audio();
+
+      // 初始化游戏
+      function initGame() {
+        createHoles(12);
+        updateWordList();
+        updateDifficultyIndicator();
+        resetTimer();
+        resetScore();
+        toggleWordDisplay();
+        
+        const targetWordContainer = document.getElementById('target-word-container');
+        targetWordContainer.classList.add('hidden-word');
+        document.getElementById('toggle-word').innerHTML = `<i class="ri-eye-off-line mr-1"></i><span>隐藏目标文字</span>`;
+      }
+
+      // 创建洞穴
+      function createHoles(count) {
+        gameContainer.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+          const hole = document.createElement('div');
+          hole.className = 'hole aspect-square rounded-full relative overflow-visible';
+          const mole = document.createElement('div');
+          mole.className = 'mole absolute bottom-0 left-0 w-full h-full flex items-center justify-center';
+          mole.dataset.index = i;
+          const wordBubble = document.createElement('div');
+          wordBubble.className = 'word-bubble';
+          const moleImg = document.createElement('div');
+          moleImg.className = 'text-4xl relative z-1';
+          moleImg.textContent = '🐭';
+          mole.appendChild(wordBubble);
+          mole.appendChild(moleImg);
+          hole.appendChild(mole);
+          gameContainer.appendChild(hole);
+          mole.addEventListener('click', handleMoleClick);
+        }
+      }
+
+      // 开始游戏
+      function startGame() {
+        gameState.hasPushed = false;
+        gameState.hasSubmittedScore = false;
+        if (!gameState.isPlaying) {
+          if (gameState.timerInterval) {
+            clearInterval(gameState.timerInterval);
+          }
+          if (gameState.moleTimer) {
+            clearTimeout(gameState.moleTimer);
+          }
+          
+          gameState.isPlaying = true;
+          gameState.score = 0;
+          gameState.correctHits = 0;
+          gameState.totalHits = 0;
+          gameState.combo = 0;
+          gameState.maxCombo = 0;
+          gameState.timer = difficultyConfig[gameState.difficulty].time;
+
+          updateScore();
+          updateTimer();
+          startScreen.classList.add('hidden');
+
+          gameState.timerInterval = setInterval(() => {
+            gameState.timer--;
+            updateTimer();
+            if (gameState.timer <= 0) {
+              clearInterval(gameState.timerInterval);
+              endGame();
+            }
+          }, 1000);
+
+          setTimeout(showMoles, 1000);
+          selectTargetWord();
+        }
+        gameState.hasPushed = false;
+      }
+
+      // 结束游戏
+      function endGame() {
+        gameState.isPlaying = false;
+        if (gameState.audioLoop) {
+          clearInterval(gameState.audioLoop);
+          gameState.audioLoop = null;
+        }
+        if (!wordSound.paused) {
+          wordSound.pause();
+          wordSound.currentTime = 0;
+        }
+        if (gameState.moleTimer) {
+          clearTimeout(gameState.moleTimer);
+        }
+        hideAllMoles();
+        showResultPanel();
+      }
+
+      // 显示地鼠
+      function showMoles() {
+        if (!gameState.isPlaying) return;
+        
+        // 清除之前的定时器
+        if (gameState.moleTimer) {
+          clearTimeout(gameState.moleTimer);
+          gameState.moleTimer = null;
+        }
+
+        // 隐藏所有地鼠
+        hideAllMoles();
+        
+        // 清空活跃地鼠数组
+        gameState.activeMoles = [];
+        
+        // 确定这一轮出现的地鼠数量
+        const molesCount = difficultyConfig[gameState.difficulty].molesPerRound;
+        
+        // 随机选择地鼠位置
+        const holeIndices = [];
+        while (holeIndices.length < molesCount) {
+          const index = Math.floor(Math.random() * 12);
+          if (!holeIndices.includes(index)) {
+            holeIndices.push(index);
+          }
+        }
+        
+        // 随机选择单词
+        const words = [];
+        words.push(gameState.targetWord); // 确保有一个是目标单词
+        while (words.length < molesCount) {
+          const word = gameState.wordList[Math.floor(Math.random() * gameState.wordList.length)];
+          if (word !== gameState.targetWord && !words.includes(word)) {
+            words.push(word);
+          }
+        }
+        
+        // 打乱单词顺序
+        shuffleArray(words);
+        
+        // 显示地鼠
+        for (let i = 0; i < molesCount; i++) {
+          const moleElement = document.querySelector(`.mole[data-index="${holeIndices[i]}"]`);
+          const word = words[i];
+          const wordBubble = moleElement.querySelector('.word-bubble');
+          wordBubble.textContent = word;
+          
+          gameState.activeMoles.push({
+            element: moleElement,
+            word: word,
+            index: holeIndices[i]
+          });
+          
+          requestAnimationFrame(() => {
+            moleElement.classList.add('active');
+          });
+        }
+        
+        // 设置下一轮地鼠出现的时间
+        const speed = speedConfig[gameState.speed];
+        const nextMoleTime = Math.floor(Math.random() * (speed.max - speed.min + 1)) + speed.min;
+        
+        gameState.moleTimer = setTimeout(() => {
+          if (gameState.isPlaying) {
+            hideAllMoles();
+            showMoles();
+          }
+        }, nextMoleTime);
+      }
+
+      // 隐藏所有地鼠
+      function hideAllMoles() {
+        const moles = document.querySelectorAll('.mole');
+        moles.forEach(mole => {
+          mole.classList.remove('active');
+        });
+      }
+
+      // 处理地鼠点击
+      function handleMoleClick(event) {
+        if (!gameState.isPlaying) return;
+        const moleElement = event.currentTarget;
+        const moleIndex = parseInt(moleElement.dataset.index);
+        
+        const clickedMole = gameState.activeMoles.find(mole => mole.index === moleIndex);
+        if (!clickedMole) return;
+        
+        gameState.totalHits++;
+        
+        if (clickedMole.word === gameState.targetWord) {
+          // 正确
+          correctSound.play();
+          gameState.score += 100;
+          gameState.correctHits++;
+          gameState.combo++;
+          gameState.maxCombo = Math.max(gameState.maxCombo, gameState.combo);
+          
+          showScoreAnimation(moleElement, '+100', 'text-green-500');
+          createParticles(event.clientX, event.clientY);
+          
+          // 清除当前定时器
+          if (gameState.moleTimer) {
+            clearTimeout(gameState.moleTimer);
+            gameState.moleTimer = null;
+          }
+          
+          // 立即处理新地鼠
+          hideAllMoles();
+          selectTargetWord();
+          showMoles();
+        } else {
+          // 错误
+          wrongSound.play();
+          gameState.score = Math.max(0, gameState.score - 50);
+          gameState.combo = 0;
+          showScoreAnimation(moleElement, '-50', 'text-red-500');
+        }
+        
+        updateScore();
+        
+        requestAnimationFrame(() => {
+          moleElement.classList.remove('active');
+        });
+        
+        gameState.activeMoles = gameState.activeMoles.filter(mole => mole.index !== moleIndex);
+      }
+
+      // 选择目标单词
+      function selectTargetWord() {
+        const previousWord = gameState.targetWord;
+        do {
+          gameState.targetWord = gameState.wordList[Math.floor(Math.random() * gameState.wordList.length)];
+        } while (gameState.targetWord === previousWord && gameState.wordList.length > 1);
+        
+        targetWordElement.textContent = gameState.targetWord;
+        playWordSound(gameState.targetWord);
+      }
+
+      // 播放单词音频
+      function playWordSound(word) {
+        const newWordSound = new Audio(`audio/${word}.mp3`);
+
+        if (wordSound && !wordSound.paused) {
+          wordSound.pause();
+        }
+        wordSound = newWordSound;
+        
+        if (gameState.audioLoop) {
+          clearInterval(gameState.audioLoop);
+          gameState.audioLoop = null;
+        }
+
+        if (!wordSound.paused) {
+          wordSound.pause();
+        }
+
+        wordSound.src = `audio/${word}.mp3`;
+        wordSound.play().catch(error => {
+          console.log('音频播放失败:', error);
+        });
+
+        gameState.audioLoop = setInterval(() => {
+          if (!wordSound.paused) wordSound.pause();
+          wordSound.currentTime = 0;
+          wordSound.play().catch(error => {
+            console.log('音频循环播放失败:', error);
+          });
+        }, 3000);
+
+        gameState.isAudioPlaying = true;
+      }
+
+      // 更新分数
+      function updateScore() {
+        scoreElement.textContent = gameState.score;
+      }
+
+      // 重置分数
+      function resetScore() {
+        gameState.score = 0;
+        updateScore();
+      }
+
+      // 更新计时器
+      function updateTimer() {
+        timerElement.textContent = gameState.timer;
+      }
+
+      // 重置计时器
+      function resetTimer() {
+        gameState.timer = difficultyConfig[gameState.difficulty].time;
+        updateTimer();
+      }
+
+      // 更新单词列表
+      function updateWordList() {
+        switch (gameState.difficulty) {
+          case 1:
+            gameState.wordList = gameData.level1;
+            break;
+          case 2:
+            gameState.wordList = gameData.level2;
+            break;
+          case 3:
+            gameState.wordList = gameData.level3;
+            break;
+          case 4:
+            gameState.wordList = gameData.level4;
+            break;
+          case 5:
+            gameState.wordList = gameData.level5;
+            break;
+        }
+      }
+
+      // 更新难度指示器
+      function updateDifficultyIndicator() {
+        difficultyIndicator.textContent = difficultyConfig[gameState.difficulty].name;
+      }
+
+      // 显示得分动画
+      function showScoreAnimation(element, text, colorClass) {
+        const rect = element.getBoundingClientRect();
+        const animation = document.createElement('div');
+        animation.className = `score-animation ${colorClass} font-bold text-xl`;
+        animation.textContent = text;
+        animation.style.left = `${rect.left + rect.width / 2}px`;
+        animation.style.top = `${rect.top}px`;
+        document.body.appendChild(animation);
+        setTimeout(() => {
+          animation.remove();
+        }, 1000);
+      }
+
+      // 创建粒子效果
+      function createParticles(x, y) {
+        const particlesContainer = document.createElement('div');
+        particlesContainer.className = 'particles';
+        particlesContainer.style.left = `${x}px`;
+        particlesContainer.style.top = `${y}px`;
+        document.body.appendChild(particlesContainer);
+        const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2'];
+        for (let i = 0; i < 30; i++) {
+          const particle = document.createElement('div');
+          particle.className = 'particle';
+          particle.style.width = `${Math.random() * 8 + 4}px`;
+          particle.style.height = particle.style.width;
+          particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+          const angle = Math.random() * Math.PI * 2;
+          const distance = Math.random() * 100 + 50;
+          const tx = Math.cos(angle) * distance;
+          const ty = Math.sin(angle) * distance;
+          particle.style.setProperty('--tx', `${tx}px`);
+          particle.style.setProperty('--ty', `${ty}px`);
+          particlesContainer.appendChild(particle);
+        }
+        setTimeout(() => {
+          particlesContainer.remove();
+        }, 1000);
+      }
+
+      // 显示结算面板
+      function showResultPanel() {
+        finalScoreElement.textContent = gameState.score;
+        resultTimeElement.textContent = `${difficultyConfig[gameState.difficulty].time}秒`;
+        const accuracy = gameState.totalHits > 0 ? Math.round((gameState.correctHits / gameState.totalHits) * 100) : 0;
+        resultAccuracyElement.textContent = `${accuracy}%`;
+        resultDifficultyElement.textContent = difficultyConfig[gameState.difficulty].name;
+        resultComboElement.textContent = gameState.maxCombo;
+        resultPanel.classList.remove('hidden');
+        resultPanel.classList.add('flex');
+        
+        const pushSection = resultPanel.querySelector('.push-section');
+        const pushMessage = resultPanel.querySelector('#push-message');
+        const requiredScore = wxPusherConfig.successScore[gameState.difficulty];
+
+        pushMessage.innerHTML = `🎉 你的得分是 ${gameState.score} 分！<br>可以留下名字上榜或分享给家长！`;
+        pushSection.classList.remove('hidden');
+        document.getElementById('submit-score').disabled = gameState.hasSubmittedScore;
+      }
+
+      // 隐藏结算面板
+      function hideResultPanel() {
+        resultPanel.classList.add('hidden');
+        resultPanel.classList.remove('flex');
+      }
+
+      // 提交成绩到排行榜
+      async function submitScore() {
+  const playerName = document.getElementById('player-name').value.trim();
+  if (!playerName) {
+    Swal.fire('请输入名字', '需要名字才能上榜哦！', 'warning');
+    return;
+  }
+
+  try {
+    // 计算正确率
+    const accuracy = gameState.totalHits > 0 
+      ? Math.round((gameState.correctHits / gameState.totalHits) * 100)
+      : 0;
+
+    const newScore = {
+      name: playerName,
+      score: gameState.score,
+      difficulty: difficultyConfig[gameState.difficulty].name,
+      accuracy: accuracy,
+      combo: gameState.maxCombo,
+      timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+
+    const scoresRef = database.ref('scores');
+    await scoresRef.push(newScore);
+    
+    Swal.fire('提交成功', '你的成绩已上榜！', 'success');
+    document.getElementById('submit-score').disabled = true;
+    gameState.hasSubmittedScore = true;
+  } catch (error) {
+    Swal.fire('提交失败', '请检查网络后重试', 'error');
+  }
+}
+
+      // 加载排行榜
+      async function loadLeaderboard() {
+  try {
+    const snapshot = await database.ref('scores')
+      .orderByChild('score')
+      .limitToLast(10)
+      .once('value');
+    
+    const scores = [];
+    snapshot.forEach(childSnapshot => {
+      const data = childSnapshot.val();
+      scores.push({ 
+        id: childSnapshot.key,
+        ...data,
+        // 格式化时间戳
+        time: new Date(data.timestamp).toLocaleDateString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      });
+    });
+
+    // 降序排列
+    scores.sort((a, b) => b.score - a.score);
+    
+    leaderboardList.innerHTML = scores.map((score, index) => `
+      <div class="leaderboard-item flex flex-col p-3 bg-gray-50 rounded-lg mb-2">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center">
+            <span class="font-bold text-lg ${
+              index === 0 ? 'text-yellow-500' : 
+              index === 1 ? 'text-gray-500' :
+              index === 2 ? 'text-amber-700' : 'text-gray-600'
+            }">${index + 1}.</span>
+            <span class="ml-2 font-medium">${score.name}</span>
+          </div>
+          <div class="text-primary font-bold text-lg">${score.score}分</div>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-2 mt-2 text-sm">
+          <div class="text-gray-500">
+            <i class="ri-time-line"></i> ${score.time}
+          </div>
+          <div class="text-center ${
+            score.accuracy >= 80 ? 'text-green-500' :
+            score.accuracy >= 60 ? 'text-yellow-500' : 'text-red-500'
+          }">
+            <i class="ri-aiming-line"></i> ${score.accuracy}%
+          </div>
+          <div class="text-right text-purple-500">
+            <i class="ri-fire-line"></i> ${score.combo}连
+          </div>
+        </div>
+        
+        <div class="mt-1 text-xs text-gray-400">
+          难度：${score.difficulty}
+        </div>
+      </div>
+    `).join('');
+    
+    leaderboardPanel.classList.remove('hidden');
+    leaderboardPanel.classList.add('flex');
+  } catch (error) {
+    Swal.fire('加载失败', '无法获取排行榜数据', 'error');
+  }
+}
+
+      // 应用主题
+      function applyTheme(themeName) {
+        const theme = themeConfig[themeName];
+        const body = document.body;
+
+        body.style.background = theme.bg;
+
+        document.querySelectorAll('.theme-nav').forEach(nav => {
+          nav.style.backgroundColor = theme.nav;
+          nav.style.color = theme.text;
+        });
+
+        document.querySelectorAll('.theme-text').forEach(text => {
+          text.style.color = theme.text;
+        });
+
+        document.querySelectorAll('.theme-border').forEach(border => {
+          border.style.borderColor = theme.border;
+        });
+
+        document.documentElement.style.setProperty('--mole-color', theme.mole);
+
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+          btn.classList.remove('selected');
+          if (btn.dataset.theme === themeName) {
+            btn.classList.add('selected');
+          }
+        });
+
+        gameState.theme = themeName;
+      }
+
+      // 切换文字显示
+      function toggleWordDisplay() {
+        gameState.showTargetWord = !gameState.showTargetWord;
+        const targetWordContainer = document.getElementById('target-word-container');
+        const toggleBtn = document.getElementById('toggle-word');
+        
+        if (gameState.showTargetWord) {
+          targetWordContainer.classList.remove('hidden-word');
+          toggleBtn.innerHTML = `<i class="ri-eye-line mr-1"></i><span>显示目标文字</span>`;
+        } else {
+          targetWordContainer.classList.add('hidden-word');
+          toggleBtn.innerHTML = `<i class="ri-eye-off-line mr-1"></i><span>隐藏目标文字</span>`;
+        }
+      }
+
+      // 辅助函数：打乱数组
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      // 事件监听器
+      document.getElementById('start-game').addEventListener('click', () => {
+        Swal.fire({
+          title: '确认开始？',
+          text: `当前难度：${difficultyConfig[gameState.difficulty].name}`,
+          showCancelButton: true,
+          confirmButtonText: '开始',
+          cancelButtonText: '取消'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            startGame();
+          }
+        });
+      });
+
+      document.querySelectorAll('.start-difficulty').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const level = parseInt(this.dataset.level);
+          gameState.difficulty = level;
+          updateDifficultyIndicator();
+          updateWordList();
+          resetTimer();
+
+          document.querySelectorAll('.start-difficulty').forEach(b => {
+            b.classList.remove('bg-primary', 'text-white');
+            b.classList.add('bg-gray-100');
+          });
+          this.classList.remove('bg-gray-100');
+          this.classList.add('bg-primary', 'text-white');
+
+          const settingsBtn = document.querySelector(`.difficulty-btn[data-level="${level}"]`);
+          if (settingsBtn) {
+            document.querySelectorAll('.difficulty-btn').forEach(b => {
+              b.classList.remove('bg-primary', 'text-white');
+              b.classList.add('bg-white');
+            });
+            settingsBtn.classList.add('bg-primary', 'text-white');
+          }
+        });
+      });
+
+      document.getElementById('open-settings').addEventListener('click', function() {
+        settingsPanel.classList.remove('hidden');
+        settingsPanel.classList.add('flex');
+        document.querySelector(`.difficulty-btn[data-level="${gameState.difficulty}"]`).click();
+        document.querySelector(`.speed-select[data-speed="${gameState.speed}"]`).click();
+      });
+
+      document.getElementById('restart-btn').addEventListener('click', () => {
+        if (gameState.isPlaying) {
+          endGame();
+        }
+        setTimeout(() => {
+          hideResultPanel();
+          startGame();
+        }, 100);
+      });
+
+      document.getElementById('home-btn').addEventListener('click', () => {
+        if (gameState.isPlaying) {
+          endGame();
+        }
+        hideResultPanel();
+        startScreen.classList.remove('hidden');
+      });
+
+      document.getElementById('settings-btn').addEventListener('click', function() {
+        settingsPanel.classList.remove('hidden');
+        settingsPanel.classList.add('flex');
+      });
+
+      document.getElementById('speed-btn').addEventListener('click', () => {
+        speedPanel.classList.remove('hidden');
+        speedPanel.classList.add('flex');
+      });
+
+      document.getElementById('close-settings').addEventListener('click', () => {
+        settingsPanel.classList.add('hidden');
+        settingsPanel.classList.remove('flex');
+      });
+
+      document.getElementById('close-speed').addEventListener('click', () => {
+        speedPanel.classList.add('hidden');
+        speedPanel.classList.remove('flex');
+      });
+
+      document.getElementById('play-again').addEventListener('click', () => {
+        hideResultPanel();
+        startGame();
+      });
+
+      document.getElementById('back-home').addEventListener('click', () => {
+        hideResultPanel();
+        startScreen.classList.remove('hidden');
+      });
+
+      document.getElementById('toggle-word').addEventListener('click', toggleWordDisplay);
+
+      document.getElementById('target-word-container').addEventListener('click', () => {
+        if (!gameState.isPlaying) {
+          Swal.fire({
+            icon: 'info',
+            title: '游戏尚未开始',
+            text: '请先开始游戏',
+            timer: 1000,
+            showConfirmButton: false
+          });
+          return;
+        }
+        
+        playWordSound(gameState.targetWord);
+        if (!gameState.showTargetWord) {
+          Swal.fire({
+            icon: 'info',
+            title: '已播放发音',
+            text: '再听一次请继续点击',
+            timer: 1000,
+            showConfirmButton: false
+          });
+        }
+      });
+
+      document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (gameState.isPlaying) {
+            endGame();
+            hideResultPanel();
+          }
+          const level = parseInt(btn.dataset.level);
+          gameState.difficulty = level;
+          updateWordList();
+          updateDifficultyIndicator();
+          gameState.timer = difficultyConfig[level].time;
+          updateTimer();
+          
+          if (gameState.isPlaying) {
+            endGame();
+            setTimeout(() => {
+              hideResultPanel();
+              startGame();
+            }, 100);
+          }
+          
+          document.querySelectorAll('.difficulty-btn').forEach(b => {
+            b.classList.remove('bg-primary', 'text-white', 'border-primary');
+            b.classList.add('bg-white', 'theme-text', 'theme-border');
+          });
+          btn.classList.remove('bg-white', 'theme-text', 'theme-border');
+          btn.classList.add('bg-primary', 'text-white');
+        });
+      });
+
+      document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const theme = btn.dataset.theme;
+          applyTheme(theme);
+        });
+      });
+
+      document.querySelectorAll('.speed-btn, .speed-select').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const speed = btn.dataset.speed;
+          gameState.speed = speed;
+          
+          if (btn.classList.contains('speed-btn')) {
+            document.querySelectorAll('.speed-btn').forEach(b => {
+              b.classList.remove('bg-primary', 'text-white');
+              b.classList.add('bg-white');
+            });
+            btn.classList.remove('bg-white');
+            btn.classList.add('bg-primary', 'text-white');
+          } else {
+            document.querySelectorAll('.speed-select i').forEach(icon => {
+              icon.classList.add('hidden');
+            });
+            btn.querySelector('i').classList.remove('hidden');
+            speedPanel.classList.add('hidden');
+            speedPanel.classList.remove('flex');
+          }
+        });
+      });
+
+      document.getElementById('submit-score').addEventListener('click', submitScore);
+      document.getElementById('view-leaderboard').addEventListener('click', loadLeaderboard);
+      // 设置面板中的排行榜按钮
+document.getElementById('view-leaderboard-settings').addEventListener('click', () => {
+  settingsPanel.classList.add('hidden');
+  loadLeaderboard();
+});
+
+// 修改原有排行榜关闭按钮
+document.getElementById('close-leaderboard').addEventListener('click', () => {
+  leaderboardPanel.classList.add('hidden');
+});
+
+      document.getElementById('send-push').addEventListener('click', async () => {
+        try {
+          const response = await fetch('http://wxpusher.zjiecode.com/api/send/message', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              appToken: wxPusherConfig.appToken,
+              content: `🏆 宝宝成绩通知：
+              得分：${gameState.score}
+              难度：${difficultyConfig[gameState.difficulty].name}
+              用时：${resultTimeElement.textContent}
+              最高连击：${gameState.maxCombo}`,
+              contentType: 1,
+              uids: wxPusherConfig.uids
+            })
+          });
+
+          const result = await response.json();
+          if (result.code === 1000) {
+            Swal.fire({
+              icon: 'success',
+              title: '发送成功',
+              text: '家长已经收到你的成绩啦！',
+              showConfirmButton: false,
+              timer: 2000
+            });
+            gameState.hasPushed = true;
+            document.getElementById('send-push').disabled = true;
+          } else {
+            Swal.fire('发送失败', result.msg || '请稍后再试', 'error');
+          }
+        } catch (error) {
+          Swal.fire('网络错误', '无法连接推送服务，请检查网络', 'error');
+        }
+      });
+
+      // 初始化游戏
+      initGame();
+      applyTheme('light');
+    });
+  </script>
+</body>
+
+</html>

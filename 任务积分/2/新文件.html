@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭积分管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        
+        :root {
+            --primary: #4f46e5;
+            --secondary: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        .title-font {
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+        
+        .coin-animation {
+            animation: coinDrop 1s ease-out;
+        }
+        
+        @keyframes coinDrop {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(0) rotate(360deg); opacity: 1; }
+        }
+        
+        .task-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background-color: var(--primary);
+        }
+        
+        .dark-mode {
+            background-color: var(--dark);
+            color: var(--light);
+        }
+        
+        .dark-mode .bg-white {
+            background-color: #334155 !important;
+        }
+        
+        .dark-mode .text-gray-800 {
+            color: #e2e8f0 !important;
+        }
+        
+        .dark-mode .border-gray-200 {
+            border-color: #475569 !important;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-indigo-600 title-font">家庭积分银行</h1>
+            <div class="flex items-center space-x-4">
+                <button id="darkModeToggle" class="p-2 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="backupBtn" class="p-2 rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </button>
+                <button id="settingsBtn" class="p-2 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        <!-- User Profiles -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">家庭成员</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Brother Profile -->
+                <div id="brotherProfile" class="bg-white rounded-xl shadow-md p-6 border-2 border-blue-200 cursor-pointer transition-all hover:border-blue-400">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                            <i class="fas fa-male text-blue-500 text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">哥哥</h3>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-yellow-500 font-bold">积分: <span id="brotherPoints">1200</span></span>
+                                <span class="text-green-500 font-bold">现金: ¥<span id="brotherCash">60.00</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-blue-500 h-2.5 rounded-full" style="width: 75%"></div>
+                        </div>
+                        <span class="ml-2 text-sm text-gray-600">本月进度: 75%</span>
+                    </div>
+                </div>
+
+                <!-- Sister Profile -->
+                <div id="sisterProfile" class="bg-white rounded-xl shadow-md p-6 border-2 border-pink-200 cursor-pointer transition-all hover:border-pink-400">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-16 h-16 rounded-full bg-pink-100 flex items-center justify-center">
+                            <i class="fas fa-female text-pink-500 text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">妹妹</h3>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-yellow-500 font-bold">积分: <span id="sisterPoints">850</span></span>
+                                <span class="text-green-500 font-bold">现金: ¥<span id="sisterCash">42.50</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-pink-500 h-2.5 rounded-full" style="width: 50%"></div>
+                        </div>
+                        <span class="ml-2 text-sm text-gray-600">本月进度: 50%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Points Exchange -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">积分兑换</h2>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">当前兑换比例</label>
+                    <div class="flex items-center">
+                        <span class="text-2xl font-bold text-yellow-500">100</span>
+                        <span class="mx-2">积分 =</span>
+                        <span class="text-2xl font-bold text-green-500">¥5.00</span>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">本月剩余可兑换</label>
+                    <div class="text-lg font-bold text-indigo-600">¥200.00</div>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="exchangeBtn" class="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition">
+                        兑换现金
+                    </button>
+                    <button id="historyBtn" class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition">
+                        兑换记录
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">本周统计</h2>
+                <div id="statsChart" class="h-48"></div>
+                <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+                    <div class="bg-blue-50 p-2 rounded">
+                        <div class="text-blue-600 font-bold">12</div>
+                        <div class="text-xs text-gray-500">完成任务</div>
+                    </div>
+                    <div class="bg-green-50 p-2 rounded">
+                        <div class="text-green-600 font-bold">600</div>
+                        <div class="text-xs text-gray-500">获得积分</div>
+                    </div>
+                    <div class="bg-yellow-50 p-2 rounded">
+                        <div class="text-yellow-600 font-bold">3</div>
+                        <div class="text-xs text-gray-500">获得徽章</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Achievements -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">成就徽章</h2>
+                <div class="grid grid-cols-4 gap-3">
+                    <div class="flex flex-col items-center">
+                        <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mb-1">
+                            <i class="fas fa-trophy text-yellow-500"></i>
+                        </div>
+                        <span class="text-xs text-center">勤奋之星</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-1">
+                            <i class="fas fa-star text-blue-500"></i>
+                        </div>
+                        <span class="text-xs text-center">学习达人</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-1">
+                            <i class="fas fa-heart text-green-500"></i>
+                        </div>
+                        <span class="text-xs text-center">家务能手</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-1">
+                            <i class="fas fa-medal text-purple-500"></i>
+                        </div>
+                        <span class="text-xs text-center">月度冠军</span>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">即将解锁</h3>
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
+                            <i class="fas fa-lock text-gray-500"></i>
+                        </div>
+                        <span class="text-sm">连续7天完成任务</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Task System -->
+        <section class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">任务系统</h2>
+                <div class="flex space-x-2">
+                    <button id="addTaskBtn" class="bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition flex items-center">
+                        <i class="fas fa-plus mr-1"></i> 添加任务
+                    </button>
+                    <div class="relative">
+                        <select id="taskFilter" class="appearance-none bg-gray-100 border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-indigo-500">
+                            <option value="all">所有任务</option>
+                            <option value="education">学习任务</option>
+                            <option value="housework">家务任务</option>
+                            <option value="health">健康任务</option>
+                            <option value="other">其他任务</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <i class="fas fa-caret-down"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <!-- Sample Task Cards -->
+                <div class="task-card bg-white rounded-xl shadow-md p-4 border-l-4 border-blue-500 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-800">完成数学作业</h3>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">学习</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">完成学校布置的数学作业并检查正确率</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-yellow-500 font-bold">+50 积分</span>
+                        <button class="complete-btn bg-blue-600 text-white text-sm py-1 px-3 rounded hover:bg-blue-700 transition" data-points="50">
+                            完成任务
+                        </button>
+                    </div>
+                </div>
+
+                <div class="task-card bg-white rounded-xl shadow-md p-4 border-l-4 border-green-500 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-800">整理书桌</h3>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">家务</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">整理自己的书桌，保持整洁有序</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-yellow-500 font-bold">+30 积分</span>
+                        <button class="complete-btn bg-green-600 text-white text-sm py-1 px-3 rounded hover:bg-green-700 transition" data-points="30">
+                            完成任务
+                        </button>
+                    </div>
+                </div>
+
+                <div class="task-card bg-white rounded-xl shadow-md p-4 border-l-4 border-purple-500 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-800">跳绳100下</h3>
+                        <span class="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">健康</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">完成100下跳绳运动，保持身体健康</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-yellow-500 font-bold">+40 积分</span>
+                        <button class="complete-btn bg-purple-600 text-white text-sm py-1 px-3 rounded hover:bg-purple-700 transition" data-points="40">
+                            完成任务
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Task Modal -->
+            <div id="addTaskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">添加新任务</h3>
+                        <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="taskForm">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">任务名称</label>
+                            <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">任务分类</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                                <option value="">选择分类</option>
+                                <option value="education">学习任务</option>
+                                <option value="housework">家务任务</option>
+                                <option value="health">健康任务</option>
+                                <option value="other">其他任务</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">积分奖励</label>
+                            <input type="number" min="10" max="1000" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">任务描述</label>
+                            <textarea rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancelTaskBtn" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                                取消
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                                保存任务
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline -->
+        <section class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">任务记录</h2>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-600 mr-2">筛选:</span>
+                    <div class="relative">
+                        <select id="timelineFilter" class="appearance-none bg-gray-100 border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-indigo-500">
+                            <option value="all">全部成员</option>
+                            <option value="brother">哥哥</option>
+                            <option value="sister">妹妹</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <i class="fas fa-caret-down"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="space-y-4">
+                    <!-- Timeline Item -->
+                    <div class="timeline-item pl-6 relative pb-4">
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-1">
+                                <i class="fas fa-male text-blue-500"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-medium text-gray-800">完成数学作业</h3>
+                                    <span class="text-sm text-gray-500">今天 15:30</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-1">完成了学校布置的数学作业，正确率95%</p>
+                                <div class="flex items-center">
+                                    <span class="text-yellow-500 font-bold mr-2">+50 积分</span>
+                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">学习任务</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Item -->
+                    <div class="timeline-item pl-6 relative pb-4">
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center mr-3 mt-1">
+                                <i class="fas fa-female text-pink-500"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-medium text-gray-800">整理书桌</h3>
+                                    <span class="text-sm text-gray-500">今天 14:15</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-1">把自己的书桌整理得非常整洁</p>
+                                <div class="flex items-center">
+                                    <span class="text-yellow-500 font-bold mr-2">+30 积分</span>
+                                    <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">家务任务</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Item -->
+                    <div class="timeline-item pl-6 relative pb-4">
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-1">
+                                <i class="fas fa-male text-blue-500"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-medium text-gray-800">跳绳100下</h3>
+                                    <span class="text-sm text-gray-500">今天 12:00</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-1">完成了每日跳绳锻炼，动作标准</p>
+                                <div class="flex items-center">
+                                    <span class="text-yellow-500 font-bold mr-2">+40 积分</span>
+                                    <span class="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">健康任务</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Item -->
+                    <div class="timeline-item pl-6 relative pb-4">
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center mr-3 mt-1">
+                                <i class="fas fa-female text-pink-500"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-medium text-gray-800">阅读30分钟</h3>
+                                    <span class="text-sm text-gray-500">昨天 19:30</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-1">阅读了课外读物《小王子》并做了笔记</p>
+                                <div class="flex items-center">
+                                    <span class="text-yellow-500 font-bold mr-2">+50 积分</span>
+                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">学习任务</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="w-full mt-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+                    加载更多...
+                </button>
+            </div>
+        </section>
+
+        <!-- Coin Animation Container -->
+        <div id="coinContainer" class="fixed inset-0 pointer-events-none z-50 overflow-hidden hidden"></div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-4">
+        <div class="container mx-auto px-4 text-center text-sm text-gray-600">
+            <p>家庭积分管理系统 © 2023 - 培养好习惯，收获好未来</p>
+        </div>
+    </footer>
+
+    <script>
+        // 初始化图表
+        function initStatsChart() {
+            const chartDom = document.getElementById('statsChart');
+            const myChart = echarts.init(chartDom);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                    axisLine: {
+                        lineStyle: {
+                            color: '#9CA3AF'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#6B7280'
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: {
+                        lineStyle: {
+                            color: '#9CA3AF'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#6B7280'
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: '#E5E7EB'
+                        }
+                    }
+                },
+                series: [
+                    {
+                        name: '积分',
+                        type: 'bar',
+                        data: [120, 80, 150, 90, 200, 70, 100],
+                        itemStyle: {
+                            color: '#F59E0B'
+                        },
+                        barWidth: '60%'
+                    }
+                ]
+            };
+            
+            myChart.setOption(option);
+            
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        }
+        
+        // 暗色模式切换
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            if (document.body.classList.contains('dark-mode')) {
+                darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        }
+        
+        // 检查本地存储中的暗色模式设置
+        function checkDarkMode() {
+            if (localStorage.getItem('darkMode') === 'enabled') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeToggle').innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        }
+        
+        // 创建硬币动画
+        function createCoinAnimation(points) {
+            const container = document.getElementById('coinContainer');
+            container.innerHTML = '';
+            container.classList.remove('hidden');
+            
+            const coinCount = Math.min(Math.floor(points / 10), 20);
+            
+            for (let i = 0; i < coinCount; i++) {
+                const coin = document.createElement('div');
+                coin.className = 'absolute text-yellow-500 text-2xl coin-animation';
+                coin.innerHTML = '<i class="fas fa-coins"></i>';
+                
+                // 随机位置
+                const startLeft = Math.random() * 100;
+                const endLeft = Math.random() * 100;
+                
+                coin.style.left = `${startLeft}%`;
+                coin.style.top = '-50px';
+                coin.style.animationDelay = `${i * 0.1}s`;
+                
+                // 自定义动画
+                coin.style.setProperty('--end-left', `${endLeft}%`);
+                
+                container.appendChild(coin);
+                
+                // 动画结束后移除硬币
+                setTimeout(() => {
+                    coin.remove();
+                    if (i === coinCount - 1) {
+                        setTimeout(() => {
+                            container.classList.add('hidden');
+                        }, 1000);
+                    }
+                }, 2000);
+            }
+        }
+        
+        // 完成任务处理
+        function handleCompleteTask(button) {
+            const points = parseInt(button.getAttribute('data-points'));
+            const currentUser = 'brother'; // 这里应该是当前选中的用户
+            
+            // 更新积分
+            const pointsElement = currentUser === 'brother' 
+                ? document.getElementById('brotherPoints') 
+                : document.getElementById('sisterPoints');
+                
+            const currentPoints = parseInt(pointsElement.textContent);
+            pointsElement.textContent = currentPoints + points;
+            
+            // 显示成功消息
+            Swal.fire({
+                icon: 'success',
+                title: '任务完成!',
+                text: `获得了 ${points} 积分`,
+                showConfirmButton: false,
+                timer: 1500
+            });
+            
+            // 播放硬币动画
+            createCoinAnimation(points);
+            
+            // 这里应该添加代码将任务添加到时间线
+            // 并更新本地存储中的数据
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化图表
+            initStatsChart();
+            
+            // 检查暗色模式
+            checkDarkMode();
+            
+            // 暗色模式切换按钮
+            document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+            
+            // 完成任务按钮
+            document.querySelectorAll('.complete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    handleCompleteTask(this);
+                });
+            });
+            
+            // 添加任务模态框
+            document.getElementById('addTaskBtn').addEventListener('click', function() {
+                document.getElementById('addTaskModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeModalBtn').addEventListener('click', function() {
+                document.getElementById('addTaskModal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancelTaskBtn').addEventListener('click', function() {
+                document.getElementById('addTaskModal').classList.add('hidden');
+            });
+            
+            // 用户切换
+            document.getElementById('brotherProfile').addEventListener('click', function() {
+                // 这里应该更新UI显示哥哥的数据
+                Swal.fire({
+                    icon: 'info',
+                    title: '已切换到哥哥',
+                    showConfirmButton: false,
+                    timer: 1000
+                });
+            });
+            
+            document.getElementById('sisterProfile').addEventListener('click', function() {
+                // 这里应该更新UI显示妹妹的数据
+                Swal.fire({
+                    icon: 'info',
+                    title: '已切换到妹妹',
+                    showConfirmButton: false,
+                    timer: 1000
+                });
+            });
+            
+            // 备份按钮
+            document.getElementById('backupBtn').addEventListener('click', function() {
+                Swal.fire({
+                    title: '备份数据',
+                    text: '您想要将数据备份到哪里?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: '本地文件',
+                    cancelButtonText: '云端存储',
+                    showDenyButton: true,
+                    denyButtonText: '取消'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // 导出到本地文件
+                        Swal.fire('成功!', '数据已导出到本地文件', 'success');
+                    } else if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
+                        // 备份到云端
+                        Swal.fire('成功!', '数据已备份到云端', 'success');
+                    }
+                });
+            });
+            
+            // 兑换按钮
+            document.getElementById('exchangeBtn').addEventListener('click', function() {
+                Swal.fire({
+                    title: '积分兑换',
+                    html: `
+                        <div class="text-left mb-4">
+                            <p class="mb-2">当前兑换比例: <span class="font-bold">100积分 = ¥5.00</span></p>
+                            <p class="mb-2">您的积分: <span class="font-bold text-yellow-500">1200</span></p>
+                            <p>可兑换金额: <span class="font-bold text-green-500">¥60.00</span></p>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">兑换积分数量</label>
+                            <input type="number" id="exchangeAmount" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="100" max="1200" step="100" value="100">
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: '确认兑换',
+                    cancelButtonText: '取消',
+                    preConfirm: () => {
+                        const amount = document.getElementById('exchangeAmount').value;
+                        if (!amount || amount < 100 || amount > 1200) {
+                            Swal.showValidationMessage('请输入有效的积分数量 (100-1200)');
+                            return false;
+                        }
+                        return amount;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const amount = result.value;
+                        const cash = (amount / 100) * 5;
+                        
+                        // 更新积分和现金
+                        document.getElementById('brotherPoints').textContent = 1200 - amount;
+                        document.getElementById('brotherCash').textContent = (60 + cash).toFixed(2);
+                        
+                        Swal.fire(
+                            '兑换成功!',
+                            `您已兑换 ${amount} 积分，获得 ¥${cash.toFixed(2)}`,
+                            'success'
+                        );
+                    }
+                });
+            });
+            
+            // 设置按钮
+            document.getElementById('settingsBtn').addEventListener('click', function() {
+                Swal.fire({
+                    title: '系统设置',
+                    html: `
+                        <div class="text-left space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">积分兑换比例</label>
+                                <div class="flex items-center">
+                                    <input type="number" id="exchangeRate" class="w-20 px-3 py-2 border border-gray-300 rounded-lg mr-2" value="100" min="10">
+                                    <span class="mr-2">积分 =</span>
+                                    <span class="font-bold">¥5.00</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">月度兑换限额</label>
+                                <div class="flex items-center">
+                                    <span class="mr-2">¥</span>
+                                    <input type="number" id="monthlyLimit" class="w-20 px-3 py-2 border border-gray-300 rounded-lg" value="300" min="50">
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="voiceEnabled" class="mr-2" checked>
+                                <label for="voiceEnabled" class="text-sm font-medium text-gray-700">启用语音反馈</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="autoBackup" class="mr-2">
+                                <label for="autoBackup" class="text-sm font-medium text-gray-700">自动备份数据</label>
+                            </div>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: '保存设置',
+                    cancelButtonText: '取消',
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        return {
+                            rate: document.getElementById('exchangeRate').value,
+                            limit: document.getElementById('monthlyLimit').value,
+                            voice: document.getElementById('voiceEnabled').checked,
+                            backup: document.getElementById('autoBackup').checked
+                        };
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire(
+                            '保存成功!',
+                            '系统设置已更新',
+                            'success'
+                        );
+                    }
+                });
+            });
+            
+            // 任务表单提交
+            document.getElementById('taskForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                document.getElementById('addTaskModal').classList.add('hidden');
+                
+                Swal.fire(
+                    '任务添加成功!',
+                    '新任务已添加到任务列表',
+                    'success'
+                );
+                
+                // 这里应该添加代码将新任务添加到任务列表
+                // 并更新本地存储中的数据
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+{
+  "pointValue": 0.1,
+  "currentUser": 1,
+  "users": {
+    "1": {
+      "name": "佳曦",
+      "points": 10,
+      "balance": 1,
+      "records": [
+        {
+          "task": "英语消消乐",
+          "points": 2,
+          "note": "因为迟到所以扣点分数",
+          "balance": 0.8,
+          "timestamp": "2025-04-22T13:41:39.922Z"
+        },
+        {
+          "task": "按时刷牙",
+          "points": 2,
+          "note": "",
+          "balance": 0.6000000000000001,
+          "timestamp": "2025-04-22T13:41:15.280Z"
+        },
+        {
+          "task": "英语消消乐",
+          "points": 6,
+          "note": "完成三个",
+          "balance": 0,
+          "timestamp": "2025-04-22T13:07:56.585Z"
+        }
+      ]
+    },
+    "2": {
+      "name": "佳恒",
+      "points": 14,
+      "balance": 1.4,
+      "records": [
+        {
+          "task": "清洗袜子",
+          "points": 2,
+          "note": "",
+          "balance": 1.2,
+          "timestamp": "2025-04-22T13:42:23.043Z"
+        },
+        {
+          "task": "按时刷牙",
+          "points": 2,
+          "note": "",
+          "balance": 1,
+          "timestamp": "2025-04-22T13:40:55.873Z"
+        },
+        {
+          "task": "认字打地鼠",
+          "points": 10,
+          "note": "完成了18100分",
+          "balance": 0,
+          "timestamp": "2025-04-22T13:40:43.818Z"
+        }
+      ]
+    }
+  },
+  "presetTasks": {
+    "做作业": 3,
+    "做家务": 2,
+    "阅读30分钟": 2,
+    "整理房间": 3
+  },
+  "exportTime": "2025-04-22T13:42:40.817Z",
+  "version": "1.1"
+}

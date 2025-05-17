@@ -1,0 +1,2953 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>佳曦🤺削西瓜🍉英语大作战</title>
+    <style>/* 全局变量 */
+:root {
+    --primary: #6366f1;
+    --success: #10b981;
+    --danger: #ef4444;
+    --dark: #1e293b;
+    --light: #f8fafc;
+}
+
+/* 基础 body 样式 */
+body {
+    margin: 0;
+    padding: 15px;
+    font-family: 'Segoe UI', system-ui;
+    background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+    min-height: 100vh;
+}
+
+/* 文件管理样式 */
+.file-manager {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    position: relative;
+}
+
+.preload-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    display: none;
+    z-index: 100;
+    min-width: 150px;
+}
+
+.preload-item {
+    padding: 6px 12px;
+    border-radius: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.preload-item:hover {
+    background: #f1f5f9;
+}
+
+/* 上传区域样式 */
+.upload-section {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+/* 主按钮样式 */
+.main-btn {
+    padding: 10px 20px;
+    font-size: 13px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.main-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* 游戏控制样式 */
+.game-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.styled-select {
+    padding: 8px 15px;
+    border: 1px solid var(--primary);
+    border-radius: 20px;
+    background: white;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+/* 题目框样式 */
+.prompt-box {
+    background: white;
+    padding: 12px;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin: 0 8px 15px;
+    position: sticky;
+    top: 10px;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    gap: 15px;
+}
+
+.prompt-content {
+    line-height: 1.5;
+    flex: 1;
+    min-width: 0;
+}
+
+#phonetic {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #666;
+    margin-left: 10px;
+    display: inline-block;
+}
+
+.timer-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 20px;
+    color: var(--dark);
+    font-weight: 600;
+}
+
+.audio-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* 单词区域样式 */
+.team-area {
+    background: white;
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border: 3px solid var(--primary);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+/* 单词网格样式 */
+.word-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-auto-rows: minmax(60px, auto);
+    gap: 10px;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+/* 单词按钮样式 */
+.word-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    font-size: clamp(25px, 3vw, 38px);
+    font-weight: 900;
+    word-break: break-word;
+    text-align: center;
+    line-height: 1.3;
+    transition: all 0.2s;
+    min-height: 80px;
+    border: none;
+    background: var(--light);
+    color: var(--dark);
+    cursor: pointer;
+}
+
+.word-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.word-btn.correct {
+    background: var(--success);
+    color: white;
+    animation: pop 0.3s;
+}
+
+.word-btn.wrong {
+    background: var(--danger);
+    color: white;
+    animation: shake 0.3s;
+}
+
+/* 计分板样式 */
+.score-board {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 18px;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* 粒子特效样式 */
+#particles {
+    position: fixed;
+    pointer-events: none;
+    z-index: 999;
+}
+
+/* 动画样式 */
+@keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    50% { transform: translateX(3px); }
+    75% { transform: translateX(-3px); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes scorePop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+@keyframes promptFade {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* 夜间模式样式 */
+body.night-mode {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: var(--light);
+}
+
+body.night-mode .main-btn {
+    background: var(--light);
+    color: var(--dark);
+    box-shadow: 0 2px 8px rgba(248, 250, 252, 0.2);
+}
+
+body.night-mode .word-btn {
+    background: var(--dark);
+    color: var(--light);
+}
+
+body.night-mode .timer-container {
+    color: white;
+}
+
+body.night-mode .preload-list {
+    background: var(--dark);
+    color: var(--light);
+}
+
+body.night-mode .preload-item:hover {
+    background: #475569;
+}
+
+body.night-mode .prompt-box {
+    background: var(--dark);
+    color: var(--light);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* 移动端适配样式 */
+@media (max-width: 480px) {
+    .game-container {
+        height: auto;
+        min-height: 400px;
+    }
+
+    .team-area {
+        min-height: 45vh;
+        padding: 10px;
+    }
+
+    .word-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    }
+
+    .word-btn {
+        min-height: 60px;
+        font-size: clamp(20px, 4vw, 24px);
+        padding: 12px;
+        line-height: 1.2;
+    }
+
+    .main-btn {
+        padding: 8px 15px;
+        font-size: 12px;
+    }
+
+    .prompt-box {
+        font-size: 14px;
+    }
+
+    #phonetic {
+        display: block;
+        margin-left: 0;
+        margin-top: 4px;
+    }
+
+    .double-mode .game-container {
+        grid-template-columns: 1fr;
+    }
+
+    .team-area {
+        min-height: 40vh;
+        padding: 8px;
+    }
+
+    .word-btn {
+        min-height: 50px;
+        font-size: 20px;
+    }
+
+    .score-board {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .prompt-box {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .double-mode .game-container {
+        grid-template-columns: 1fr;
+    }
+
+    .audio-controls {
+        order: 1;
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .game-container {
+        height: auto;
+        min-height: 60vh;
+    }
+
+    .double-mode .game-container {
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+        grid-auto-rows: minmax(300px, auto);
+    }
+
+    .word-btn {
+        padding: 12px;
+        font-size: clamp(18px, 4vw, 24px);
+        min-height: 60px;
+    }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+    .game-container {
+        height: calc(100vh - 160px);
+    }
+
+    .word-btn {
+        min-height: 50px;
+        font-size: 18px;
+    }
+}
+
+/* 新增主题样式 */
+/* 护眼模式 */
+body.eye-care-mode {
+    background: linear-gradient(135deg, #e3f2e1 0%, #d8ead3 100%);
+    color: #2c4a2f;
+}
+
+body.eye-care-mode .word-btn {
+    background: #c5e1a5;
+    color: #33691e;
+    border: 2px solid #a5d6a7;
+}
+
+body.eye-care-mode .prompt-box {
+    background: #f1f8e9;
+    border: 2px solid #c5e1a5;
+    color: #2c4a2f;
+}
+
+/* 多彩模式 */
+body.colorful-mode {
+    background: linear-gradient(135deg, 
+        #ffebee 0%, 
+        #f3e5f5 20%, 
+        #e8eaf6 40%, 
+        #e0f2f1 60%, 
+        #f1f8e9 80%);
+    animation: gradientFlow 30s ease infinite;
+}
+
+body.colorful-mode .word-btn {
+    background: linear-gradient(45deg, 
+        #ffcdd2, 
+        #f8bbd0, 
+        #e1bee7, 
+        #d1c4e9);
+    color: #6a1b9a;
+    border: 2px solid white;
+}
+
+body.colorful-mode .prompt-box {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    border: 2px solid #e91e63;
+    color: #6a1b9a;
+}
+
+/* 动画效果 */
+@keyframes gradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* 主题切换按钮优化 */
+#themeBtn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s;
+}
+
+#themeBtn::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, 
+        transparent 25%,
+        rgba(255,255,255,0.2) 50%,
+        transparent 75%);
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% { transform: translate(-50%, -50%) rotate(45deg); }
+    100% { transform: translate(150%, 150%) rotate(45deg); }
+}
+
+/* 增强主题对比度 */
+body.colorful-mode .word-btn.correct {
+    background: #4caf50;
+    color: white;
+}
+
+body.colorful-mode .word-btn.wrong {
+    background: #f44336;
+}
+
+body.eye-care-mode .word-btn.correct {
+    background: #8bc34a;
+}
+
+body.eye-care-mode .word-btn.wrong {
+    background: #ef5350;
+}
+
+/* 排行榜样式 - 新增 */
+.leaderboard-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    z-index: 1000;
+    max-width: 95%;
+    width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.leaderboard-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.leaderboard-item {
+    display: grid;
+    grid-template-columns: 50px 1fr 2fr;
+    gap: 15px;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.leaderboard-rank {
+    font-weight: bold;
+    color: var(--primary);
+    font-size: 1.2em;
+    text-align: center;
+}
+/* 修改游戏容器布局 */
+.game-container {
+    display: grid;
+    gap: 15px;
+    height: 65vh;
+}
+
+/* 双人模式布局 */
+.double-mode .game-container {
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+    grid-auto-rows: 1fr;
+}
+
+/* 单人模式保持原有样式 */
+.single-mode .game-container {
+    grid-template-columns: 1fr;
+}
+
+/* 调整团队区域高度 */
+.team-area {
+    min-height: 300px;
+    height: 100%;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .double-mode .game-container {
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+        grid-auto-rows: minmax(300px, auto);
+    }
+    
+    /* 竖屏时保持并排 */
+    @media (orientation: portrait) {
+        .double-mode .game-container {
+            grid-template-columns: 1fr 1fr;
+            height: 50vh;
+        }
+    }
+}
+
+/* 横屏优化 */
+@media (max-width: 768px) and (orientation: landscape) {
+    .double-mode .game-container {
+        height: calc(100vh - 160px);
+    }
+}
+</style>
+</head>
+
+<body>
+    <!-- 添加文件输入元素 -->
+    <input type="file" id="wordFile" hidden accept=".txt">
+    <canvas id="particles"></canvas>
+
+    <div class="header">
+        <!-- 上传部分 -->
+        <div class="upload-section">
+            <div class="file-manager">
+                <button class="main-btn" onclick="showPreloadList()">
+                    📁 单词列表
+                </button>
+                <div class="preload-list" id="preloadList">
+                    <div class="preload-close" onclick="closePreloadList()">×</div>
+                    <div class="preload-item" onclick="loadLocalFile('grade3_1.txt')">三年级上册</div>
+                    <div class="preload-item" onclick="loadLocalFile('grade3_2.txt')">三年级下册</div>
+                    <div class="preload-item" onclick="loadLocalFile('grade4_1.txt')">四年级上册</div>
+                    <div class="preload-item" onclick="loadLocalFile('grade4_2.txt')">四年级下册</div>
+                    <div class="preload-item" onclick="loadLocalFile('grade5_1.txt')">五年级上册</div>
+                    <div class="preload-item" onclick="loadLocalFile('grade5_2.txt')">五年级下册</div>
+                    <div class="preload-item" onclick="loadLocalFile('grade6_1.txt')">六年级上册</div>
+                    <div class="preload-item" onclick="loadLocalFile('grade6_2.txt')">六年级下册</div>
+                </div>
+            </div>
+
+            <!-- 上传下拉菜单 -->
+            <div class="file-manager">
+                <button class="main-btn" onclick="toggleMoreMenu()">
+                    更多
+                </button>
+                <div class="preload-list" id="moreMenu">
+                    <div class="preload-close" onclick="closeMoreMenu()">×</div>
+                    <div class="preload-item" onclick="document.getElementById('wordFile').click()">
+                        📄 上传单词
+                    </div>
+                    <div class="preload-item" onclick="loadOnlineFile()">
+                        🌐 网络更新
+                    </div>
+                    <div class="preload-item" onclick="game.showLeaderboard()">
+                        🏆 排行榜
+                    </div>
+                </div>
+            </div>
+
+            <!-- 难度选择 -->
+            <select class="styled-select" id="difficultySelect">
+                <option value="easy">12片</option>
+                <option value="medium">24卡片</option>
+                <option value="hard">36卡片</option>
+            </select>
+        </div>
+
+        <!-- 游戏控制部分 -->
+        <div class="game-controls">
+            <button class="main-btn" id="themeBtn" onclick="toggleThemeMode()">🌙 夜间模式</button>
+            <select class="styled-select" id="modeSelect">
+                <option value="single">单人模式</option>
+                <option value="double">双人模式</option>
+            </select>
+            <button class="main-btn" id="controlBtn">开始游戏</button>
+        </div>
+        
+        <!-- 修改后的题目区域 -->
+        <div class="prompt-box">
+            <div class="prompt-content">
+                <div id="currentGrade"></div>
+                <div>当前题目：<span id="currentPrompt"></span></div>
+                <div id="phonetic"></div>
+            </div>
+            
+            <div class="audio-controls">
+                <button class="main-btn" id="playAudioBtn">▶️ 播放</button>
+            </div>
+            
+            <div class="timer-container">
+                <span>⏳</span>
+                <div class="timer" id="timer">3:00</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="team-area" id="team1">
+            <div class="word-grid"></div>
+            <div class="score-board">得分: 0</div>
+        </div>
+        <div class="team-area" id="team2">
+            <div class="word-grid"></div>
+            <div class="score-board">得分: 0</div>
+        </div>
+    </div>
+
+    <!-- 排行榜模态框 -->
+    <div class="leaderboard-modal" id="leaderboardModal" style="display:none;">
+        <div class="leaderboard-header">
+            <h3>🏆 英雄榜 - 前50名</h3>
+            <button class="main-btn" onclick="document.getElementById('leaderboardModal').style.display='none'">
+                关闭
+            </button>
+        </div>
+        <div class="leaderboard-list" id="leaderboardList">
+            <div style="text-align: center; padding: 20px;">加载中...</div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        // Firebase配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVgI3wGX56VOxs_3gXi_KcWvSVn5MZU8o",
+            authDomain: "english-digestion.firebaseapp.com",
+            databaseURL: "https://english-digestion-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "english-digestion",
+            storageBucket: "english-digestion.firebasestorage.app",
+            messagingSenderId: "541339648230",
+            appId: "1:541339648230:web:af21a5327ecdd30a07fb27",
+            measurementId: "G-GMZGMPF9F9"
+        };
+
+        // 初始化Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // 粒子系统初始化
+        const particlesCanvas = document.getElementById('particles');
+        const ctx = particlesCanvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            particlesCanvas.width = window.innerWidth;
+            particlesCanvas.height = window.innerHeight;
+        }
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 15; i++) {
+                particles.push({
+                    x,
+                    y,
+                    size: Math.random() * 4 + 2,
+                    speedX: (Math.random() - 0.5) * 5,
+                    speedY: (Math.random() - 0.5) * 5,
+                    color: `hsl(${Math.random() * 360}, 70%, 60%)`
+                });
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
+            particles.forEach((p, index) => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.size *= 0.93;
+
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (p.size < 0.5) particles.splice(index, 1);
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        // 音效系统
+        const audio = {
+            bgm: new Audio('https://actions.google.com/sounds/v1/cartoon/clang.ogg'),
+            correct: new Audio('audio/消.mp3'),
+            wrong: new Audio('audio/败.mp3'),
+            victory: new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_cheer.ogg')
+        };
+
+        // 音频缓存
+        const audioCache = {};
+
+        // 游戏主逻辑
+        class Game {
+            constructor() {
+                this.state = {
+                    isPlaying: false,
+                    words: [],
+                    currentPrompt: null,
+                    timeLeft: 180,
+                    mode: 'single',
+                    errorWords: [],
+                    errorStats: {},
+                    currentGrade: '未选择',
+                    correctCount: 0,
+                    wrongCount: 0,
+                    hasSubmitted: false
+                };
+
+                this.audioController = {
+                    abortController: new AbortController(),
+                    currentAudio: null,
+                    audioTimer: null
+                };
+
+                this.initElements();
+                this.initCanvas();
+                this.initEvents();
+
+                this.changeMode();
+
+                resizeCanvas();
+                animateParticles();
+                window.addEventListener('resize', () => {
+                    resizeCanvas();
+                    this.initCanvas();
+                });
+            }
+
+            initElements() {
+                this.elements = {
+                    modeSelect: document.getElementById('modeSelect'),
+                    controlBtn: document.getElementById('controlBtn'),
+                    wordFile: document.getElementById('wordFile'),
+                    timer: document.getElementById('timer'),
+                    currentPrompt: document.getElementById('currentPrompt'),
+                    team1: document.getElementById('team1'),
+                    team2: document.getElementById('team2'),
+                    preloadList: document.getElementById('preloadList'),
+                    playAudioBtn: document.getElementById('playAudioBtn')
+                };
+            }
+
+            initCanvas() {
+                this.particlesCanvas = document.getElementById('particles');
+                if (!this.particlesCanvas) {
+                    console.error("未找到粒子画布元素");
+                    return;
+                }
+                this.ctx = this.particlesCanvas.getContext('2d');
+                this.particles = [];
+                resizeCanvas();
+            }
+
+            initEvents() {
+                if (this.elements.modeSelect) {
+                    this.elements.modeSelect.addEventListener('change', () => this.changeMode());
+                }
+                if (this.elements.controlBtn) {
+                    this.elements.controlBtn.addEventListener('click', () => this.toggleGame());
+                }
+                if (this.elements.wordFile) {
+                    this.elements.wordFile.addEventListener('change', e => this.loadWords(e.target.files[0]));
+                }
+                if (this.elements.playAudioBtn) {
+                    this.elements.playAudioBtn.addEventListener('click', () => this.playCurrentAudio());
+                }
+            }
+
+            // 新增手动播放方法
+            async playCurrentAudio() {
+                if (!this.state.currentPrompt) return;
+                
+                const currentWord = this.state.words.find(w => w.chinese === this.state.currentPrompt);
+                if (!currentWord) return;
+
+                try {
+                    if (currentWord.audioEN) {
+                        await this.playAudioWithAbort(currentWord.audioEN);
+                        await this.delay(1000);
+                    }
+                    if (currentWord.audioCN) {
+                        await this.playAudioWithAbort(currentWord.audioCN);
+                    }
+                } catch (err) {
+                    if (err.name !== 'AbortError') console.error('手动播放失败:', err);
+                }
+            }
+
+            // 音频播放方法
+            async playAudioWithAbort(audio) {
+                if (!audio) return;
+                
+                this.audioController.abortController.abort();
+                this.audioController.abortController = new AbortController();
+                
+                try {
+                    const playPromise = audio.play();
+                    this.audioController.currentAudio = audio;
+                    
+                    await Promise.race([
+                        playPromise,
+                        new Promise((_, reject) => {
+                            this.audioController.abortController.signal.addEventListener('abort', () => 
+                                reject(new DOMException('Aborted', 'AbortError'))
+                            );
+                        })
+                    ]);
+
+                    await new Promise((resolve, reject) => {
+                        audio.addEventListener('ended', resolve, { once: true });
+                        this.audioController.abortController.signal.addEventListener('abort', reject);
+                    });
+                } catch (err) {
+                    if (err.name !== 'AbortError') console.error('音频播放错误:', err);
+                } finally {
+                    if (this.audioController.currentAudio === audio) {
+                        this.audioController.currentAudio = null;
+                    }
+                }
+            }
+
+            // 延迟方法
+            delay(ms) {
+                return new Promise((resolve, reject) => {
+                    const timeoutId = setTimeout(() => {
+                        if (!this.audioController.abortController.signal.aborted) {
+                            resolve();
+                        }
+                    }, ms);
+                    
+                    this.audioController.abortController.signal.addEventListener('abort', () => {
+                        clearTimeout(timeoutId);
+                        reject(new DOMException('Aborted', 'AbortError'));
+                    });
+                });
+            }
+
+            async loadAudio(text) {
+                const cacheKey = `${text}`;
+                if (audioCache[cacheKey]) {
+                    return audioCache[cacheKey];
+                }
+
+                const basePath = `audio/en`;
+                const fileName = encodeURIComponent(text);
+                const audio = new Audio(`${basePath}/${fileName}.mp3`);
+
+                try {
+                    await new Promise((resolve, reject) => {
+                        audio.addEventListener('canplaythrough', resolve);
+                        audio.addEventListener('error', reject);
+                    });
+                    audioCache[cacheKey] = audio;
+                    return audio;
+                } catch (error) {
+                    console.warn(`音频加载失败: ${text}`, error);
+                    return null;
+                }
+            }
+
+            async loadWords(file) {
+                try {
+                    const text = await file.text();
+                    const lines = text.split('\n').filter(line => line.trim());
+
+                    const wordPromises = lines.map(line => {
+                        const [english, chinese] = line.split(',').map(s => s.trim());
+                        return english && chinese ? {
+                            english,
+                            chinese
+                        } : null;
+                    });
+
+                    this.state.words = (await Promise.all(wordPromises))
+                        .filter(word => word !== null);
+
+                    await this.preloadAudios();
+
+                    this.setupUI();
+                    alert(`成功加载 ${this.state.words.length} 个单词`);
+                } catch (error) {
+                    alert('加载单词表失败: ' + error.message);
+                }
+            }
+
+            async preloadAudios() {
+                const CONCURRENCY = 3;
+                const queue = [];
+
+                for (const word of this.state.words) {
+                    const loadTask = async () => {
+                        try {
+                            word.audioEN = await this.loadAudio(word.english);
+                            word.audioCN = await this.loadAudio(word.chinese);
+                        } catch (error) {
+                            console.warn(`音频预加载失败: ${word.english}`, error);
+                        }
+                    };
+
+                    queue.push(loadTask());
+
+                    if (queue.length >= CONCURRENCY) {
+                        await Promise.all(queue);
+                        queue.length = 0;
+                    }
+                }
+                await Promise.all(queue);
+            }
+
+            setupUI() {
+                document.querySelectorAll('.word-grid').forEach(grid => grid.innerHTML = '');
+            }
+
+            handleAnswer(word, btn) {
+                if (!this.state.isPlaying) return;
+
+                if (word.chinese === this.state.currentPrompt) {
+                    this.stopAudioLoop();
+                    audio.correct.play();
+                    createParticles(btn.getBoundingClientRect().left + btn.offsetWidth / 2,
+                        btn.getBoundingClientRect().top + btn.offsetHeight / 2);
+                    btn.classList.add('correct');
+                    this.updateScore(btn.closest('.team-area'), 10);
+                    this.state.correctCount++;
+
+                    setTimeout(() => {
+                        btn.remove();
+                        this.nextRound();
+                    }, 500);
+                } else {
+                    this.state.wrongCount++;
+                    audio.wrong.play();
+                    btn.classList.add('wrong');
+                    setTimeout(() => btn.classList.remove('wrong'), 500);
+                    
+                    const errorEntry = {
+                        selected: word.english,
+                        correct: this.state.currentPrompt,
+                        timestamp: new Date().toISOString()
+                    };
+                    this.state.errorWords.push(errorEntry);
+
+                    this.state.errorStats[this.state.currentPrompt] =
+                        (this.state.errorStats[this.state.currentPrompt] || 0) + 1;
+                }
+            }
+
+            startAudioLoop() {
+                this.stopAudioLoop();
+                const currentWord = this.state.words.find(w => w.chinese === this.state.currentPrompt);
+                if (!currentWord) return;
+
+                const playSequence = async () => {
+                    try {
+                        if (this.audioController.abortController.signal.aborted || !this.state.isPlaying) return;
+
+                        if (currentWord.audioEN) {
+                            await this.playAudioWithAbort(currentWord.audioEN);
+                            await this.delay(1000);
+                        }
+                        if (currentWord.audioCN) {
+                            await this.playAudioWithAbort(currentWord.audioCN);
+                            await this.delay(3000);
+                        }
+
+                        if (!this.audioController.abortController.signal.aborted && this.state.isPlaying) {
+                            this.audioController.audioTimer = setTimeout(playSequence, 5000);
+                        }
+                    } catch (err) {
+                        if (err.name !== 'AbortError') console.error(err);
+                    }
+                };
+
+                playSequence();
+            }
+
+            stopAudioLoop() {
+                if (this.audioController.abortController) {
+                    this.audioController.abortController.abort();
+                }
+                clearTimeout(this.audioController.audioTimer);
+                if (this.audioController.currentAudio) {
+                    this.audioController.currentAudio.pause();
+                    this.audioController.currentAudio.currentTime = 0;
+                    this.audioController.currentAudio = null;
+                }
+                this.audioController.abortController = new AbortController();
+            }
+
+            updateScore(container, points) {
+                const scoreElement = container.querySelector('.score-board');
+                const current = parseInt(scoreElement.textContent.match(/\d+/)) || 0;
+                scoreElement.textContent = `得分: ${current + points}`;
+                scoreElement.style.animation = 'scorePop 0.3s';
+            }
+
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            nextRound() {
+                this.stopAudioLoop();
+                const availableWords = this.state.words.filter(w => !w.used);
+                if (availableWords.length === 0) return this.endGame(true);
+
+                const difficulty = document.getElementById('difficultySelect').value;
+                let wordCount = 12;
+                if (difficulty === 'medium') wordCount = 24;
+                if (difficulty === 'hard') wordCount = 36;
+
+                const correctWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+                this.state.currentPrompt = correctWord.chinese;
+                this.state.words = this.state.words.map(w => 
+                    w.chinese === this.state.currentPrompt ? {...w, used: true} : w
+                );
+
+                const otherWords = this.state.words.filter(w => w !== correctWord);
+                const selectedWords = this.shuffleArray([
+                    correctWord, 
+                    ...this.shuffleArray(otherWords).slice(0, wordCount-1)
+                ]);
+
+                this.updateWordButtons(selectedWords);
+
+                this.elements.currentPrompt.textContent = correctWord.chinese;
+                document.getElementById('currentGrade').textContent = `${this.state.currentGrade}`;
+                document.getElementById('phonetic').textContent = correctWord.phonetic || '[音标加载中]';
+                this.elements.currentPrompt.style.animation = 'promptFade 0.4s';
+                this.startAudioLoop();
+            }
+            
+            updateWordButtons(words) {
+                const difficulty = document.getElementById('difficultySelect').value;
+                const containers = [this.elements.team1];
+                if (this.state.mode === 'double') containers.push(this.elements.team2);
+
+                containers.forEach(container => {
+                    container.parentElement.setAttribute('data-difficulty', difficulty);
+                    const grid = container.querySelector('.word-grid');
+                    grid.innerHTML = '';
+                    words.forEach(word => {
+                        const btn = document.createElement('button');
+                        btn.className = 'word-btn';
+                        btn.textContent = word.english;
+                        btn.addEventListener('click', () => this.handleAnswer(word, btn));
+                        grid.appendChild(btn);
+                    });
+                });
+            }
+
+            startTimer() {
+                this.timerInterval = setInterval(() => {
+                    this.state.timeLeft--;
+                    const [timer, timerStyle] = [this.elements.timer, this.elements.timer.style];
+                    timer.textContent = `${Math.floor(this.state.timeLeft / 60)}:${(this.state.timeLeft % 60).toString().padStart(2, '0')}`;
+
+                    if (this.state.timeLeft <= 10) timerStyle.animation = 'blink 1s infinite';
+                    if (this.state.timeLeft <= 0) this.endGame();
+                }, 1000);
+            }
+
+            toggleGame() {
+                if (!this.state.isPlaying) {
+                    if (this.state.words.length === 0) return alert('请先加载单词表！');
+                    this.state.isPlaying = true;
+                    this.elements.controlBtn.textContent = '游戏中...';
+                    audio.bgm.loop = true;
+                    audio.bgm.play();
+                    this.startTimer();
+                    this.nextRound();
+                } else {
+                    this.endGame();
+                }
+            }
+
+            async submitScore(username) {
+                if (!username || this.state.hasSubmitted) return;
+                
+                const score = parseInt(document.querySelector('.score-board').textContent.match(/\d+/)[0]);
+                // 计算正确率
+                const totalAnswered = this.state.correctCount + this.state.wrongCount;
+                const accuracy = totalAnswered > 0 
+                    ? (this.state.correctCount / totalAnswered * 100).toFixed(1)
+                    : 0;
+
+                const record = {
+                    name: username,
+                    score: score,
+                    time: new Date().toISOString(),
+                    grade: this.state.currentGrade,
+                    accuracy: accuracy + "%",
+                    duration: 180 - this.state.timeLeft + "秒", // 实际用时
+                    correct: this.state.correctCount,
+                    wrong: this.state.wrongCount
+                };
+
+                try {
+                    await database.ref('scores').push(record);
+                    this.state.hasSubmitted = true;
+                    alert('提交成功！');
+                } catch (error) {
+                    console.error('提交失败:', error);
+                    alert('提交失败，请检查网络连接');
+                }
+            }
+
+            showLeaderboard() {
+                const modal = document.getElementById('leaderboardModal');
+                modal.style.display = 'block';
+
+                database.ref('scores').orderByChild('score').limitToLast(50).on('value', (snapshot) => {
+                    const scores = [];
+                    snapshot.forEach(child => {
+                        scores.push({
+                            id: child.key,
+                            ...child.val()
+                        });
+                    });
+                    
+                    // 按分数降序排列
+                    const sorted = scores.sort((a, b) => b.score - a.score);
+                    
+                    // 格式化日期
+                    const formatDate = (timestamp) => {
+                        const date = new Date(timestamp);
+                        return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+                    };
+
+                    const listHtml = sorted.map((item, index) => `
+                        <div class="leaderboard-item">
+                            <div class="leaderboard-rank">${index + 1}</div>
+                            <div class="leaderboard-details">
+                                <div class="leaderboard-name">${item.name}</div>
+                                <div class="leaderboard-grade">${item.grade} • ${formatDate(item.time)}</div>
+                            </div>
+                            <div class="leaderboard-stats">
+                                <div class="stat-item">
+                                    <span>🏆 ${item.score}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>⏱️ ${item.duration}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>🎯 ${item.accuracy}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>✅ ${item.correct}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>❌ ${item.wrong}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('leaderboardList').innerHTML = listHtml || '<div style="text-align: center; padding: 20px;">暂无记录</div>';
+                });
+            }
+
+            endGame(victory = false) {
+                this.stopAudioLoop();
+                clearInterval(this.timerInterval);
+                this.state.isPlaying = false;
+                this.elements.controlBtn.textContent = '开始游戏';
+                this.elements.timer.style.animation = '';
+                audio.bgm.pause();
+
+                if (victory) {
+                    audio.victory.play();
+                    createParticles(window.innerWidth / 2, window.innerHeight / 2);
+                }
+
+                const scores = [
+                    this.elements.team1.querySelector('.score-board').textContent,
+                    ...(this.state.mode === 'double' ? [this.elements.team2.querySelector('.score-board').textContent] : [])
+                ];
+
+                let errorMessage = `错误单词：\n`;
+                Object.entries(this.state.errorStats).forEach(([word, count]) => {
+                    errorMessage += `${word}（${count}次）\n`;
+                });
+
+                const username = prompt(`游戏结束！\n${scores.join('\n')}\n\n${errorMessage}\n请输入你的名字提交成绩：`);
+                if (username) {
+                    this.submitScore(username.trim());
+                }
+                this.resetGame();
+            }
+
+            resetGame() {
+                this.state.timeLeft = 180;
+                this.state.words = this.state.words.map(w => ({
+                    ...w,
+                    used: false
+                }));
+                this.state.currentPrompt = null;
+                this.state.errorWords = [];
+                this.state.errorStats = {};
+                this.state.correctCount = 0;
+                this.state.wrongCount = 0;
+                this.state.currentGrade = '未选择';
+                this.state.hasSubmitted = false;
+
+                this.setupUI();
+                this.elements.timer.textContent = '3:00';
+                document.querySelectorAll('.score-board').forEach(el => el.textContent = '得分: 0');
+                this.elements.currentPrompt.textContent = '';
+                this.elements.timer.style.animation = '';
+            }
+
+            changeMode() {
+                this.state.mode = this.elements.modeSelect.value;
+                document.body.classList.toggle('single-mode', this.state.mode === 'single');
+                document.body.classList.toggle('double-mode', this.state.mode === 'double');
+                this.elements.team2.style.display = this.state.mode === 'double' ? 'grid' : 'none';
+                this.setupUI();
+            }
+        }
+
+        // 初始化游戏实例
+        const game = new Game();
+
+        // 文件管理功能
+        function showPreloadList() {
+            const list = document.getElementById('preloadList');
+            if (!list) return;
+            list.style.display = list.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function closePreloadList() {
+            document.getElementById('preloadList').style.display = 'none';
+        }
+
+        function toggleMoreMenu() {
+            const menu = document.getElementById('moreMenu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function closeMoreMenu() {
+            document.getElementById('moreMenu').style.display = 'none';
+        }
+
+        // 添加全局点击关闭菜单事件
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.file-manager')) {
+                closeMoreMenu();
+            }
+        });
+
+        async function loadLocalFile(filename) {
+            try {
+                if (predefinedWords[filename]) {
+                    game.state.words = predefinedWords[filename];
+                    
+                    const gradeMap = {
+                        'grade3_1': '三年级上册',
+                        'grade3_2': '三年级下册',
+                        'grade4_1': '四年级上册',
+                        'grade4_2': '四年级下册',
+                        'grade5_1': '五年级上册', 
+                        'grade5_2': '五年级下册',
+                        'grade6_1': '六年级上册',
+                        'grade6_2': '六年级下册'
+                    };
+                    
+                    const gradeKey = filename.replace('.txt', '');
+                    game.state.currentGrade = gradeMap[gradeKey] || '当前年级';
+                    
+                    await game.preloadAudios();
+                    game.setupUI();
+                    closePreloadList();
+                    alert(`成功加载 ${game.state.words.length} 个单词`);
+                }
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function loadOnlineFile() {
+            const GITHUB_URL = 'https://raw.githubusercontent.com/<username>/<repo>/<branch>/path/to/words.txt';
+            const LOCAL_FILE_PATH = 'data/words.txt';
+
+            try {
+                const response = await fetch(GITHUB_URL);
+                if (!response.ok) throw new Error(`GitHub 文件加载失败: ${response.status}`);
+                const blob = await response.blob();
+                await game.loadWords(blob);
+                alert('单词表已从 GitHub 成功加载！');
+            } catch (error) {
+                console.warn('从 GitHub 加载失败，尝试从本地加载:', error.message);
+
+                try {
+                    const response = await fetch(LOCAL_FILE_PATH);
+                    if (!response.ok) throw new Error(`本地文件加载失败: ${response.status}`);
+                    const blob = await response.blob();
+                    await game.loadWords(blob);
+                    alert('单词表已从本地文件加载！');
+                } catch (localError) {
+                    alert('从 GitHub 和本地文件加载均失败，请检查路径或网络连接');
+                    console.error('本地加载错误:', localError.message);
+                }
+            }
+        }
+
+        // 全局事件监听
+        document.addEventListener('click', (e) => {
+            const list = document.getElementById('preloadList');
+            if (list && !e.target.closest('.file-manager')) {
+                list.style.display = 'none';
+            }
+        });
+
+        // 主题模式切换逻辑
+        const themeModes = [{
+            name: '正常模式',
+            class: ''
+        },{
+            name: '🌙 夜间模式',
+            class: 'night-mode'
+        },{
+            name: '👁 护眼模式',
+            class: 'eye-care-mode'
+        },{
+            name: '🌈 多彩模式',
+            class: 'colorful-mode'
+        }];
+
+        let currentThemeIndex = 0;
+
+        function toggleThemeMode() {
+    themeModes.forEach(mode => {
+        if (mode.class) {
+            document.body.classList.remove(mode.class);
+        }
+    });
+
+    currentThemeIndex = (currentThemeIndex + 1) % themeModes.length;
+    const currentTheme = themeModes[currentThemeIndex];
+
+    if (currentTheme.class) {
+        document.body.classList.add(currentTheme.class);
+    }
+
+    document.getElementById('themeBtn').textContent = currentTheme.name;
+    localStorage.setItem('themeMode', currentThemeIndex);
+    
+    // 强制重新渲染卡片
+    if (game.state.currentPrompt) {
+        game.nextRound();
+    }
+}
+
+        // 初始化主题
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('themeMode');
+            if (savedTheme !== null) {
+                currentThemeIndex = Math.min(parseInt(savedTheme), themeModes.length - 1);
+                const theme = themeModes[currentThemeIndex];
+                document.getElementById('themeBtn').textContent = theme.name;
+                if (theme.class) {
+                    document.body.classList.add(theme.class);
+                }
+            }
+        });
+
+        // 预定义单词数据
+        const predefinedWords = {
+        // 三年级上册
+        'grade3_1.txt': [{
+          english: 'ruler',
+          chinese: '尺子',
+          phonetic: 'ˈruːlər'
+        },
+          {
+            english: 'pencil',
+            chinese: '铅笔',
+            phonetic: 'ˈpensl'
+          },
+          {
+            english: 'eraser',
+            chinese: '橡皮',
+            phonetic: 'ɪˈreɪzər'
+          },
+          {
+            english: 'crayon',
+            chinese: '蜡笔',
+            phonetic: 'ˈkreɪən'
+          },
+          {
+            english: 'bag',
+            chinese: '书包',
+            phonetic: 'bæɡ'
+          },
+          {
+            english: 'pen',
+            chinese: '钢笔',
+            phonetic: 'pen'
+          },
+          {
+            english: 'book',
+            chinese: '书',
+            phonetic: 'bʊk'
+          },
+          {
+            english: 'sharpener',
+            chinese: '卷笔刀',
+            phonetic: 'ˈʃɑːrpənər'
+          },
+          {
+            english: 'school',
+            chinese: '学校',
+            phonetic: 'skuːl'
+          },
+          {
+            english: 'head',
+            chinese: '头',
+            phonetic: 'hed'
+          },
+          {
+            english: 'face',
+            chinese: '脸',
+            phonetic: 'feɪs'
+          },
+          {
+            english: 'nose',
+            chinese: '鼻子',
+            phonetic: 'noʊz'
+          },
+          {
+            english: 'mouth',
+            chinese: '嘴',
+            phonetic: 'maʊθ'
+          },
+          {
+            english: 'eye',
+            chinese: '眼睛',
+            phonetic: 'aɪ'
+          },
+          {
+            english: 'ear',
+            chinese: '耳朵',
+            phonetic: 'ɪr'
+          },
+          {
+            english: 'arm',
+            chinese: '手臂',
+            phonetic: 'ɑːrm'
+          },
+          {
+            english: 'leg',
+            chinese: '腿',
+            phonetic: 'leɡ'
+          },
+          {
+            english: 'foot',
+            chinese: '脚',
+            phonetic: 'fʊt'
+          },
+          {
+            english: 'red',
+            chinese: '红色',
+            phonetic: 'red'
+          },
+          {
+            english: 'yellow',
+            chinese: '黄色',
+            phonetic: 'ˈjeləʊ'
+          },
+          {
+            english: 'green',
+            chinese: '绿色',
+            phonetic: 'ɡriːn'
+          },
+          {
+            english: 'blue',
+            chinese: '蓝色',
+            phonetic: 'bluː'
+          },
+          {
+            english: 'black',
+            chinese: '黑色',
+            phonetic: 'blæk'
+          },
+          {
+            english: 'white',
+            chinese: '白色',
+            phonetic: 'waɪt'
+          },
+          {
+            english: 'orange',
+            chinese: '橙色',
+            phonetic: 'ˈɔːrɪndʒ'
+          },
+          {
+            english: 'cat',
+            chinese: '猫',
+            phonetic: 'kæt'
+          },
+          {
+            english: 'dog',
+            chinese: '狗',
+            phonetic: 'dɔːɡ'
+          },
+          {
+            english: 'panda',
+            chinese: '熊猫',
+            phonetic: 'ˈpændə'
+          },
+          {
+            english: 'bird',
+            chinese: '鸟',
+            phonetic: 'bɜːrd'
+          },
+          {
+            english: 'tiger',
+            chinese: '老虎',
+            phonetic: 'ˈtaɪɡər'
+          },
+          {
+            english: 'zoo',
+            chinese: '动物园',
+            phonetic: 'zuː'
+          },
+          {
+            english: 'cake',
+            chinese: '蛋糕',
+            phonetic: 'keɪk'
+          },
+          {
+            english: 'bread',
+            chinese: '面包',
+            phonetic: 'bred'
+          },
+          {
+            english: 'milk',
+            chinese: '牛奶',
+            phonetic: 'mɪlk'
+          },
+          {
+            english: 'water',
+            chinese: '水',
+            phonetic: 'ˈwɔːtər'
+          },
+          {
+            english: 'fish',
+            chinese: '鱼',
+            phonetic: 'fɪʃ'
+          },
+          {
+            english: 'rice',
+            chinese: '米饭',
+            phonetic: 'raɪs'
+          },
+          {
+            english: 'one',
+            chinese: '一',
+            phonetic: 'wʌn'
+          },
+          {
+            english: 'two',
+            chinese: '二',
+            phonetic: 'tuː'
+          },
+          {
+            english: 'three',
+            chinese: '三',
+            phonetic: 'θriː'
+          },
+          {
+            english: 'four',
+            chinese: '四',
+            phonetic: 'fɔːr'
+          },
+          {
+            english: 'five',
+            chinese: '五',
+            phonetic: 'faɪv'
+          },
+          {
+            english: 'six',
+            chinese: '六',
+            phonetic: 'sɪks'
+          },
+          {
+            english: 'seven',
+            chinese: '七',
+            phonetic: 'ˈsevn'
+          },
+          {
+            english: 'eight',
+            chinese: '八',
+            phonetic: 'eɪt'
+          },
+          {
+            english: 'nine',
+            chinese: '九',
+            phonetic: 'naɪn'
+          },
+          {
+            english: 'ten',
+            chinese: '十',
+            phonetic: 'ten'
+          }],
+        // 三年级下册
+        'grade3_2.txt': [{
+          english: 'girl',
+          chinese: '女孩',
+          phonetic: 'ɡɜːrl'
+        },
+          {
+            english: 'family',
+            chinese: '家庭',
+            phonetic: 'ˈfæməli'
+          },
+          {
+            english: 'father',
+            chinese: '爸爸',
+            phonetic: 'ˈfɑːðər'
+          },
+          {
+            english: 'mother',
+            chinese: '妈妈',
+            phonetic: 'ˈmʌðər'
+          },
+          {
+            english: 'brother',
+            chinese: '兄弟',
+            phonetic: 'ˈbrʌðər'
+          },
+          {
+            english: 'sister',
+            chinese: '姐妹',
+            phonetic: 'ˈsɪstə(r)'
+          },
+          {
+            english: 'grandpa',
+            chinese: '爷爷',
+            phonetic: 'ˈɡrænpɑː'
+          },
+          {
+            english: 'grandma',
+            chinese: '奶奶',
+            phonetic: 'ˈɡrænmɑː'
+          },
+          {
+            english: 'apple',
+            chinese: '苹果',
+            phonetic: 'ˈæpl'
+          },
+          {
+            english: 'banana',
+            chinese: '香蕉',
+            phonetic: 'bəˈnænə'
+          },
+          {
+            english: 'orange',
+            chinese: '橙子',
+            phonetic: 'ˈɔːrɪndʒ'
+          },
+          {
+            english: 'grape',
+            chinese: '葡萄',
+            phonetic: 'ɡreɪp'
+          },
+          {
+            english: 'like',
+            chinese: '喜欢',
+            phonetic: 'laɪk'
+          },
+          {
+            english: 'monkey',
+            chinese: '猴子',
+            phonetic: 'ˈmʌŋki'
+          },
+          {
+            english: 'elephant',
+            chinese: '大象',
+            phonetic: 'ˈelɪfənt'
+          },
+          {
+            english: 'lion',
+            chinese: '狮子',
+            phonetic: 'ˈlaɪən'
+          },
+          {
+            english: 'giraffe',
+            chinese: '长颈鹿',
+            phonetic: 'dʒəˈrɑːf'
+          },
+          {
+            english: 'tall',
+            chinese: '高的',
+            phonetic: 'tɔːl'
+          },
+          {
+            english: 'short',
+            chinese: '矮的',
+            phonetic: 'ʃɔːrt'
+          },
+          // Unit 4 Where is my car?
+          {
+            english: 'car',
+            chinese: '小汽车',
+            phonetic: 'kɑːr'
+          },
+          {
+            english: 'boat',
+            chinese: '小船',
+            phonetic: 'boʊt'
+          },
+          {
+            english: 'map',
+            chinese: '地图',
+            phonetic: 'mæp'
+          },
+          {
+            english: 'cap',
+            chinese: '帽子',
+            phonetic: 'kæp'
+          },
+          // Unit 5 Do you like pears?
+          {
+            english: 'pear',
+            chinese: '梨',
+            phonetic: 'per'
+          },
+          {
+            english: 'strawberry',
+            chinese: '草莓',
+            phonetic: 'ˈstrɔːberi'
+          },
+          {
+            english: 'watermelon',
+            chinese: '西瓜',
+            phonetic: 'ˈwɔːtərmelən'
+          },
+          // Unit 6 How many?
+          {
+            english: 'eleven',
+            chinese: '十一',
+            phonetic: 'ɪˈlevn'
+          },
+          {
+            english: 'twelve',
+            chinese: '十二',
+            phonetic: 'twelv'
+          },
+          {
+            english: 'thirteen',
+            chinese: '十三',
+            phonetic: 'ˌθɜːrˈtiːn'
+          },
+          {
+            english: 'fifteen',
+            chinese: '十五',
+            phonetic: 'ˌfɪfˈtiːn'
+          },
+          {
+            english: 'twenty',
+            chinese: '二十',
+            phonetic: 'ˈtwenti'
+          }],
+        // 四年级上册
+        'grade4_1.txt': [
+          // 教室与学校相关
+          {
+            english: 'classroom',
+            chinese: '教室',
+            phonetic: 'ˈklæsruːm'
+          },
+          {
+            english: 'window',
+            chinese: '窗户',
+            phonetic: 'ˈwɪndoʊ'
+          },
+          {
+            english: 'blackboard',
+            chinese: '黑板',
+            phonetic: 'ˈblækbɔːrd'
+          },
+          {
+            english: 'light',
+            chinese: '电灯',
+            phonetic: 'laɪt'
+          },
+          {
+            english: 'picture',
+            chinese: '图画',
+            phonetic: 'ˈpɪktʃər'
+          },
+          {
+            english: 'door',
+            chinese: '门',
+            phonetic: 'dɔːr'
+          },
+          {
+            english: 'teacher\'s desk',
+            chinese: '讲台',
+            phonetic: 'ˈtiːtʃərz desk'
+          },
+          {
+            english: 'computer',
+            chinese: '计算机',
+            phonetic: 'kəmˈpjuːtər'
+          },
+          {
+            english: 'fan',
+            chinese: '风扇',
+            phonetic: 'fæn'
+          },
+          {
+            english: 'wall',
+            chinese: '墙壁',
+            phonetic: 'wɔːl'
+          },
+          {
+            english: 'floor',
+            chinese: '地板',
+            phonetic: 'flɔːr'
+          },
+          {
+            english: 'TV',
+            chinese: '电视',
+            phonetic: 'ˌtiː ˈviː'
+          },
+          {
+            english: 'clean',
+            chinese: '打扫',
+            phonetic: 'kliːn'
+          },
+          {
+            english: 'help',
+            chinese: '帮助',
+            phonetic: 'help'
+          },
+          // 书包与学习用品
+          {
+            english: 'schoolbag',
+            chinese: '书包',
+            phonetic: 'ˈskuːlbæɡ'
+          },
+          {
+            english: 'maths book',
+            chinese: '数学书',
+            phonetic: 'ˈmæθs bʊk'
+          },
+          {
+            english: 'English book',
+            chinese: '英语书',
+            phonetic: 'ˈɪŋɡlɪʃ bʊk'
+          },
+          {
+            english: 'Chinese book',
+            chinese: '语文书',
+            phonetic: 'ˌtʃaɪˈniːz bʊk'
+          },
+          {
+            english: 'storybook',
+            chinese: '故事书',
+            phonetic: 'ˈstɔːribʊk'
+          },
+          {
+            english: 'notebook',
+            chinese: '笔记本',
+            phonetic: 'ˈnoʊtbʊk'
+          },
+          {
+            english: 'toy',
+            chinese: '玩具',
+            phonetic: 'tɔɪ'
+          },
+          {
+            english: 'key',
+            chinese: '钥匙',
+            phonetic: 'kiː'
+          },
+          // 人物与性格
+          {
+            english: 'strong',
+            chinese: '强壮的',
+            phonetic: 'strɔːŋ'
+          },
+          {
+            english: 'friendly',
+            chinese: '友好的',
+            phonetic: 'ˈfrendli'
+          },
+          {
+            english: 'quiet',
+            chinese: '安静的',
+            phonetic: 'ˈkwaɪət'
+          },
+          {
+            english: 'glasses',
+            chinese: '眼镜',
+            phonetic: 'ˈɡlæsɪz'
+          },
+          {
+            english: 'hat',
+            chinese: '帽子',
+            phonetic: 'hæt'
+          },
+          // Unit 1 My classroom
+          {
+            english: 'classroom',
+            chinese: '教室',
+            phonetic: 'ˈklæsruːm'
+          },
+          {
+            english: 'really',
+            chinese: '真的',
+            phonetic: 'ˈriːəli'
+          },
+          // 新增
+          {
+            english: 'near',
+            chinese: '靠近',
+            phonetic: 'nɪr'
+          },
+          // 新增
+
+          // Unit 2 My schoolbag
+          {
+            english: 'schoolbag',
+            chinese: '书包',
+            phonetic: 'ˈskuːlbæɡ'
+          },
+          {
+            english: 'lost',
+            chinese: '丢失',
+            phonetic: 'lɔːst'
+          },
+          // 新增
+
+          // Unit 3 My friends
+          {
+            english: 'friendly',
+            chinese: '友好的',
+            phonetic: 'ˈfrendli'
+          },
+          {
+            english: 'quiet',
+            chinese: '安静的',
+            phonetic: 'ˈkwaɪət'
+          },
+          {
+            english: 'hair',
+            chinese: '头发',
+            phonetic: 'her'
+          },
+          // 新增
+          {
+            english: 'shoe',
+            chinese: '鞋子',
+            phonetic: 'ʃuː'
+          },
+          // 新增
+
+          // Unit 4 My home
+          {
+            english: 'bedroom',
+            chinese: '卧室',
+            phonetic: 'ˈbedruːm'
+          },
+          {
+            english: 'sofa',
+            chinese: '沙发',
+            phonetic: 'ˈsoʊfə'
+          },
+          {
+            english: 'fridge',
+            chinese: '冰箱',
+            phonetic: 'frɪdʒ'
+          },
+          {
+            english: 'phone',
+            chinese: '电话',
+            phonetic: 'foʊn'
+          } // 新增
+        ],
+
+        // 四年级下册
+        'grade4_2.txt': [
+          // Unit 1 My School
+          {
+            english: 'first floor',
+            chinese: '一楼',
+            phonetic: 'ˈfɜːst flɔːr'
+          },
+          {
+            english: 'second floor',
+            chinese: '二楼',
+            phonetic: 'ˈsekənd flɔːr'
+          },
+          {
+            english: 'teachers office',
+            chinese: '教师办公室',
+            phonetic: 'ˈtiːtʃəz ˈɔːfɪs'
+          },
+          {
+            english: 'library',
+            chinese: '图书馆',
+            phonetic: 'ˈlaɪbreri'
+          },
+          {
+            english: 'playground',
+            chinese: '操场',
+            phonetic: 'ˈpleɪɡraʊnd'
+          },
+          {
+            english: 'computer room',
+            chinese: '计算机房',
+            phonetic: 'kəmˈpjuːtər ruːm'
+          },
+          {
+            english: 'art room',
+            chinese: '美术教室',
+            phonetic: 'ˈɑːrt ruːm'
+          },
+          {
+            english: 'music room',
+            chinese: '音乐教室',
+            phonetic: 'ˈmjuːzɪk ruːm'
+          },
+
+          // Unit 2 What Time Is It?
+          {
+            english: 'breakfast',
+            chinese: '早餐',
+            phonetic: 'ˈbrekfəst'
+          },
+          {
+            english: 'English class',
+            chinese: '英语课',
+            phonetic: 'ˈɪŋɡlɪʃ klæs'
+          },
+          {
+            english: 'lunch',
+            chinese: '午餐',
+            phonetic: 'lʌntʃ'
+          },
+          {
+            english: 'PE class',
+            chinese: '体育课',
+            phonetic: 'ˌpiː ˈiː klæs'
+          },
+          {
+            english: 'dinner',
+            chinese: '晚餐',
+            phonetic: 'ˈdɪnər'
+          },
+          {
+            english: 'get up',
+            chinese: '起床',
+            phonetic: 'ɡet ʌp'
+          },
+          {
+            english: 'go to school',
+            chinese: '上学',
+            phonetic: 'ɡoʊ tuː skuːl'
+          },
+
+          // Unit 3 Weather
+          {
+            english: 'cold',
+            chinese: '寒冷的',
+            phonetic: 'koʊld'
+          },
+          {
+            english: 'warm',
+            chinese: '温暖的',
+            phonetic: 'wɔːrm'
+          },
+          {
+            english: 'hot',
+            chinese: '炎热的',
+            phonetic: 'hɑːt'
+          },
+          {
+            english: 'sunny',
+            chinese: '晴朗的',
+            phonetic: 'ˈsʌni'
+          },
+          {
+            english: 'rainy',
+            chinese: '多雨的',
+            phonetic: 'ˈreɪni'
+          },
+          {
+            english: 'windy',
+            chinese: '多风的',
+            phonetic: 'ˈwɪndi'
+          },
+          {
+            english: 'cloudy',
+            chinese: '多云的',
+            phonetic: 'ˈklaʊdi'
+          },
+
+          // Unit 4 At the Farm
+          {
+            english: 'tomato',
+            chinese: '西红柿',
+            phonetic: 'təˈmeɪtoʊ'
+          },
+          {
+            english: 'potato',
+            chinese: '土豆',
+            phonetic: 'pəˈteɪtoʊ'
+          },
+          {
+            english: 'carrot',
+            chinese: '胡萝卜',
+            phonetic: 'ˈkærət'
+          },
+          {
+            english: 'green beans',
+            chinese: '豆角',
+            phonetic: 'ˈɡriːn biːnz'
+          },
+          {
+            english: 'horse',
+            chinese: '马',
+            phonetic: 'hɔːrs'
+          },
+          {
+            english: 'cow',
+            chinese: '奶牛',
+            phonetic: 'kaʊ'
+          },
+          {
+            english: 'sheep',
+            chinese: '绵羊',
+            phonetic: 'ʃiːp'
+          },
+
+          // Unit 5 My Clothes
+          {
+            english: 'clothes',
+            chinese: '衣服',
+            phonetic: 'kloʊðz'
+          },
+          {
+            english: 'dress',
+            chinese: '连衣裙',
+            phonetic: 'dres'
+          },
+          {
+            english: 'skirt',
+            chinese: '短裙',
+            phonetic: 'skɜːrt'
+          },
+          {
+            english: 'coat',
+            chinese: '外套',
+            phonetic: 'koʊt'
+          },
+          {
+            english: 'shirt',
+            chinese: '衬衫',
+            phonetic: 'ʃɜːrt'
+          },
+          {
+            english: 'shoes',
+            chinese: '鞋子',
+            phonetic: 'ʃuːz'
+          },
+          // Unit 6 Shopping（新增10词）
+          {
+            english: 'gloves',
+            chinese: '手套',
+            phonetic: 'ɡlʌvz'
+          },
+          {
+            english: 'scarf',
+            chinese: '围巾',
+            phonetic: 'skɑːrf'
+          },
+          {
+            english: 'umbrella',
+            chinese: '雨伞',
+            phonetic: 'ʌmˈbrelə'
+          },
+          {
+            english: 'sunglasses',
+            chinese: '太阳镜',
+            phonetic: 'ˈsʌnɡlæsɪz'
+          },
+          {
+            english: 'expensive',
+            chinese: '昂贵的',
+            phonetic: 'ɪkˈspensɪv'
+          },
+          {
+            english: 'cheap',
+            chinese: '便宜的',
+            phonetic: 'tʃiːp'
+          },
+          {
+            english: 'size',
+            chinese: '尺码',
+            phonetic: 'saɪz'
+          },
+          {
+            english: 'price',
+            chinese: '价格',
+            phonetic: 'praɪs'
+          },
+          {
+            english: 'sale',
+            chinese: '促销',
+            phonetic: 'seɪl'
+          },
+          {
+            english: 'cashier',
+            chinese: '收银员',
+            phonetic: 'kæˈʃɪr'
+          },
+          // 季节与天气
+          {
+            english: 'spring',
+            chinese: '春天',
+            phonetic: 'sprɪŋ'
+          },
+          {
+            english: 'summer',
+            chinese: '夏天',
+            phonetic: 'ˈsʌmər'
+          },
+          {
+            english: 'autumn',
+            chinese: '秋天',
+            phonetic: 'ˈɔːtəm'
+          },
+          {
+            english: 'winter',
+            chinese: '冬天',
+            phonetic: 'ˈwɪntər'
+          },
+          {
+            english: 'rainy',
+            chinese: '多雨的',
+            phonetic: 'ˈreɪni'
+          },
+          {
+            english: 'sunny',
+            chinese: '晴朗的',
+            phonetic: 'ˈsʌni'
+          },
+          {
+            english: 'windy',
+            chinese: '多风的',
+            phonetic: 'ˈwɪndi'
+          },
+          {
+            english: 'cloudy',
+            chinese: '多云的',
+            phonetic: 'ˈklaʊdi'
+          },
+          // 家庭与家居
+          {
+            english: 'bedroom',
+            chinese: '卧室',
+            phonetic: 'ˈbedruːm'
+          },
+          {
+            english: 'living room',
+            chinese: '客厅',
+            phonetic: 'ˈlɪvɪŋ ruːm'
+          },
+          {
+            english: 'kitchen',
+            chinese: '厨房',
+            phonetic: 'ˈkɪtʃɪn'
+          },
+          {
+            english: 'bathroom',
+            chinese: '浴室',
+            phonetic: 'ˈbæθruːm'
+          },
+          {
+            english: 'fridge',
+            chinese: '冰箱',
+            phonetic: 'frɪdʒ'
+          },
+          {
+            english: 'sofa',
+            chinese: '沙发',
+            phonetic: 'ˈsoʊfə'
+          },
+          {
+            english: 'table',
+            chinese: '桌子',
+            phonetic: 'ˈteɪbl'
+          }],
+        // 五年级上册
+        'grade5_1.txt': [
+          // 月份与星期
+          {
+            english: 'January',
+            chinese: '一月',
+            phonetic: 'ˈdʒænjuəri'
+          },
+          {
+            english: 'February',
+            chinese: '二月',
+            phonetic: 'ˈfebruəri'
+          },
+          {
+            english: 'March',
+            chinese: '三月',
+            phonetic: 'mɑːrtʃ'
+          },
+          {
+            english: 'April',
+            chinese: '四月',
+            phonetic: 'ˈeɪprəl'
+          },
+          {
+            english: 'May',
+            chinese: '五月',
+            phonetic: 'meɪ'
+          },
+          {
+            english: 'June',
+            chinese: '六月',
+            phonetic: 'dʒuːn'
+          },
+          {
+            english: 'July',
+            chinese: '七月',
+            phonetic: 'dʒuˈlaɪ'
+          },
+          {
+            english: 'August',
+            chinese: '八月',
+            phonetic: 'ˈɔːɡəst'
+          },
+          {
+            english: 'September',
+            chinese: '九月',
+            phonetic: 'sepˈtembər'
+          },
+          {
+            english: 'October',
+            chinese: '十月',
+            phonetic: 'ɑːkˈtoʊbər'
+          },
+          {
+            english: 'November',
+            chinese: '十一月',
+            phonetic: 'noʊˈvembər'
+          },
+          {
+            english: 'December',
+            chinese: '十二月',
+            phonetic: 'dɪˈsembər'
+          },
+          {
+            english: 'Monday',
+            chinese: '星期一',
+            phonetic: 'ˈmʌndeɪ'
+          },
+          {
+            english: 'Tuesday',
+            chinese: '星期二',
+            phonetic: 'ˈtjuːzdeɪ'
+          },
+          {
+            english: 'Wednesday',
+            chinese: '星期三',
+            phonetic: 'ˈwenzdeɪ'
+          },
+          {
+            english: 'Thursday',
+            chinese: '星期四',
+            phonetic: 'ˈθɜːrzdeɪ'
+          },
+          {
+            english: 'Friday',
+            chinese: '星期五',
+            phonetic: 'ˈfraɪdeɪ'
+          },
+          {
+            english: 'Saturday',
+            chinese: '星期六',
+            phonetic: 'ˈsætərdeɪ'
+          },
+          {
+            english: 'Sunday',
+            chinese: '星期日',
+            phonetic: 'ˈsʌndeɪ'
+          },
+          // 食物与餐具
+          {
+            english: 'beef',
+            chinese: '牛肉',
+            phonetic: 'biːf'
+          },
+          {
+            english: 'chicken',
+            chinese: '鸡肉',
+            phonetic: 'ˈtʃɪkɪn'
+          },
+          {
+            english: 'noodles',
+            chinese: '面条',
+            phonetic: 'ˈnuːdlz'
+          },
+          {
+            english: 'soup',
+            chinese: '汤',
+            phonetic: 'suːp'
+          },
+          {
+            english: 'chopsticks',
+            chinese: '筷子',
+            phonetic: 'ˈtʃɑːpstɪks'
+          },
+          {
+            english: 'fork',
+            chinese: '餐叉',
+            phonetic: 'fɔːrk'
+          }],
+        // 五年级下册
+        'grade5_2.txt': [
+          // Unit 1 Daily Routine
+          {
+            english: 'do morning exercises',
+            chinese: '晨练',
+            phonetic: 'duː ˈmɔːrnɪŋ ˈeksərsaɪzɪz'
+          },
+          {
+            english: 'eat breakfast',
+            chinese: '吃早餐',
+            phonetic: 'iːt ˈbrekfəst'
+          },
+          {
+            english: 'have English class',
+            chinese: '上英语课',
+            phonetic: 'hæv ˈɪŋɡlɪʃ klæs'
+          },
+          {
+            english: 'play sports',
+            chinese: '运动',
+            phonetic: 'pleɪ spɔːrts'
+          },
+          {
+            english: 'go shopping',
+            chinese: '购物',
+            phonetic: 'ɡoʊ ˈʃɑːpɪŋ'
+          },
+
+          // Unit 2 Seasons
+          {
+            english: 'spring',
+            chinese: '春天',
+            phonetic: 'sprɪŋ'
+          },
+          {
+            english: 'summer',
+            chinese: '夏天',
+            phonetic: 'ˈsʌmər'
+          },
+          {
+            english: 'autumn',
+            chinese: '秋天',
+            phonetic: 'ˈɔːtəm'
+          },
+          {
+            english: 'winter',
+            chinese: '冬天',
+            phonetic: 'ˈwɪntər'
+          },
+          {
+            english: 'season',
+            chinese: '季节',
+            phonetic: 'ˈsiːzn'
+          },
+
+          // Unit 3 Months
+          {
+            english: 'January',
+            chinese: '一月',
+            phonetic: 'ˈdʒænjuəri'
+          },
+          {
+            english: 'February',
+            chinese: '二月',
+            phonetic: 'ˈfebruəri'
+          },
+          {
+            english: 'March',
+            chinese: '三月',
+            phonetic: 'mɑːrtʃ'
+          },
+          {
+            english: 'April',
+            chinese: '四月',
+            phonetic: 'ˈeɪprəl'
+          },
+          {
+            english: 'May',
+            chinese: '五月',
+            phonetic: 'meɪ'
+          },
+          {
+            english: 'June',
+            chinese: '六月',
+            phonetic: 'dʒuːn'
+          },
+
+          // Unit 4 Activities
+          {
+            english: 'climb mountains',
+            chinese: '爬山',
+            phonetic: 'klaɪm ˈmaʊntnz'
+          },
+          {
+            english: 'visit grandparents',
+            chinese: '看望祖父母',
+            phonetic: 'ˈvɪzɪt ˈɡrændˌpeərənts'
+          },
+          {
+            english: 'go hiking',
+            chinese: '远足',
+            phonetic: 'ɡoʊ ˈhaɪkɪŋ'
+          },
+          {
+            english: 'weekend',
+            chinese: '周末',
+            phonetic: 'ˈwiːkend'
+          },
+
+          // Unit 5 Animals
+          {
+            english: 'kangaroo',
+            chinese: '袋鼠',
+            phonetic: 'ˌkæŋɡəˈruː'
+          },
+          {
+            english: 'jump',
+            chinese: '跳',
+            phonetic: 'dʒʌmp'
+          },
+          {
+            english: 'swim',
+            chinese: '游泳',
+            phonetic: 'swɪm'
+          },
+          {
+            english: 'fly',
+            chinese: '飞',
+            phonetic: 'flaɪ'
+          },
+          // Unit 3 完整月份（补全）
+          {
+            english: 'July',
+            chinese: '七月',
+            phonetic: 'dʒuˈlaɪ'
+          },
+          {
+            english: 'August',
+            chinese: '八月',
+            phonetic: 'ˈɔːɡəst'
+          },
+          {
+            english: 'September',
+            chinese: '九月',
+            phonetic: 'sepˈtembər'
+          },
+          {
+            english: 'October',
+            chinese: '十月',
+            phonetic: 'ɑːkˈtoʊbər'
+          },
+          {
+            "english": "November",
+            "chinese": "十一月",
+            "phonetic": "noʊˈvembər"
+          },
+          {
+            "english": "December",
+            "chinese": "十二月",
+            "phonetic": "dɪˈsembər"
+          },
+          {
+            "english": "do homework",
+            "chinese": "做作业",
+            "phonetic": "duː ˈhoʊmwɚk"
+          },
+          {
+            "english": "watch TV",
+            "chinese": "看电视",
+            "phonetic": "wɑːtʃ ˌtiː ˈviː"
+          },
+          {
+            "english": "read books",
+            "chinese": "读书",
+            "phonetic": "riːd bʊks"
+          },
+          {
+            "english": "climb trees",
+            "chinese": "爬树",
+            "phonetic": "klaɪm triːz"
+          },
+          {
+            "english": "catch mice",
+            "chinese": "捉老鼠",
+            "phonetic": "kætʃ maɪs"
+          },
+          {
+            "english": "go camping",
+            "chinese": "露营",
+            "phonetic": "ɡoʊ ˈkæmpɪŋ"
+          },
+          {
+            "english": "take photos",
+            "chinese": "拍照",
+            "phonetic": "teɪk ˈfoʊtos"
+          }],
+        // 六年级上册
+        "grade6_1.txt": [
+          // 学科与职业
+          {
+            "english": "science",
+            "chinese": "科学",
+            "phonetic": "ˈsaɪəns"
+          },
+          {
+            "english": "history",
+            "chinese": "历史",
+            "phonetic": "ˈhɪstri"
+          },
+          {
+            "english": "geography",
+            "chinese": "地理",
+            "phonetic": "dʒiˈɑːɡrəfi"
+          },
+          {
+            "english": "biology",
+            "chinese": "生物",
+            "phonetic": "baɪˈɑːlədʒi"
+          },
+          {
+            "english": "chemistry",
+            "chinese": "化学",
+            "phonetic": "ˈkemɪstri"
+          },
+          {
+            "english": "physics",
+            "chinese": "物理",
+            "phonetic": "ˈfɪzɪks"
+          },
+          {
+            "english": "mathematics",
+            "chinese": "数学",
+            "phonetic": "ˌmæθəˈmætɪks"
+          },
+          {
+            "english": "language",
+            "chinese": "语言",
+            "phonetic": "ˈlæŋɡwɪdʒ"
+          },
+          {
+            "english": "doctor",
+            "chinese": "医生",
+            "phonetic": "ˈdɑːktər"
+          },
+          {
+            "english": "engineer",
+            "chinese": "工程师",
+            "phonetic": "ˌendʒɪˈnɪr"
+          },
+          {
+            "english": "artist",
+            "chinese": "艺术家",
+            "phonetic": "ˈɑːrtɪst"
+          },
+          {
+            "english": "nurse",
+            "chinese": "护士",
+            "phonetic": "nɜːrs"
+          },
+          {
+            "english": "farmer",
+            "chinese": "农民",
+            "phonetic": "ˈfɑːrmər"
+          },
+          {
+            "english": "driver",
+            "chinese": "司机",
+            "phonetic": "ˈdraɪvər"
+          }],
+        // 六年级下册
+        "grade6_2.txt": [
+          // Unit 1 Professions
+          {
+            "english": "scientist",
+            "chinese": "科学家",
+            "phonetic": "ˈsaɪəntɪst"
+          },
+          {
+            "english": "astronaut",
+            "chinese": "宇航员",
+            "phonetic": "ˈæstrənɔːt"
+          },
+          {
+            "english": "pilot",
+            "chinese": "飞行员",
+            "phonetic": "ˈpaɪlət"
+          },
+          {
+            "english": "coach",
+            "chinese": "教练",
+            "phonetic": "koʊtʃ"
+          },
+
+          // Unit 2 Technology
+          {
+            "english": "robot",
+            "chinese": "机器人",
+            "phonetic": "ˈroʊbɑːt"
+          },
+          {
+            "english": "rocket",
+            "chinese": "火箭",
+            "phonetic": "ˈrɑːkɪt"
+          },
+          {
+            "english": "spaceship",
+            "chinese": "宇宙飞船",
+            "phonetic": "ˈspeɪsʃɪp"
+          },
+          {
+            "english": "satellite",
+            "chinese": "卫星",
+            "phonetic": "ˈsætəlaɪt"
+          },
+
+          // Unit 3 Environment
+          {
+            "english": "recycle",
+            "chinese": "回收",
+            "phonetic": "ˌriːˈsaɪkl"
+          },
+          {
+            "english": "pollution",
+            "chinese": "污染",
+            "phonetic": "pəˈluːʃn"
+          },
+          {
+            "english": "protect",
+            "chinese": "保护",
+            "phonetic": "prəˈtekt"
+          },
+          {
+            "english": "energy",
+            "chinese": "能源",
+            "phonetic": "ˈenərdʒi"
+          },
+
+          // Unit 4 Culture
+          {
+            "english": "traditional",
+            "chinese": "传统的",
+            "phonetic": "trəˈdɪʃənl"
+          },
+          {
+            "english": "festival",
+            "chinese": "节日",
+            "phonetic": "ˈfestɪvl"
+          },
+          {
+            "english": "custom",
+            "chinese": "习俗",
+            "phonetic": "ˈkʌstəm"
+          },
+
+          // Unit 5 Travel
+          {
+            "english": "passport",
+            "chinese": "护照",
+            "phonetic": "ˈpæspɔːrt"
+          },
+          {
+            "english": "visa",
+            "chinese": "签证",
+            "phonetic": "ˈviːzə"
+          },
+          {
+            "english": "sightseeing",
+            "chinese": "观光",
+            "phonetic": "ˈsaɪtsiːɪŋ"
+          },
+          {
+            "english": "luggage",
+            "chinese": "行李",
+            "phonetic": "ˈlʌɡɪdʒ"
+          },
+          // Unit 1 新增职业
+          {
+            "english": "architect",
+            "chinese": "建筑师",
+            "phonetic": "ˈɑːrkɪtekt"
+          },
+          {
+            "english": "journalist",
+            "chinese": "记者",
+            "phonetic": "ˈdʒɜːrnəlɪst"
+          },
+
+          // Unit 2 科技扩展
+          {
+            "english": "artificial intelligence",
+            "chinese": "人工智能",
+            "phonetic": "ˌɑːrtɪˈfɪʃl ɪnˈtelɪdʒəns"
+          },
+          {
+            "english": "programming",
+            "chinese": "编程",
+            "phonetic": "ˈproʊɡræmɪŋ"
+          },
+
+          // Unit 3 环境保护
+          {
+            "english": "sustainable",
+            "chinese": "可持续的",
+            "phonetic": "səˈsteɪnəbl"
+          },
+          {
+            "english": "carbon footprint",
+            "chinese": "碳足迹",
+            "phonetic": "ˈkɑːrbən ˈfʊtprɪnt"
+          },
+
+          // Unit 4 新增传统节日
+          {
+            "english": "Mid-Autumn Festival",
+            "chinese": "中秋节",
+            "phonetic": "ˌmɪd ˈɔːtəm ˈfestɪvl"
+          },
+          {
+            "english": "Dragon Boat Festival",
+            "chinese": "端午节",
+            "phonetic": "ˈdræɡən bəʊt ˈfestɪvl"
+          },
+
+          // Unit 5 旅行扩展
+          {
+            "english": "boarding pass",
+            "chinese": "登机牌",
+            "phonetic": "ˈbɔːrdɪŋ pæs"
+          },
+          {
+            "english": "currency",
+            "chinese": "货币",
+            "phonetic": "ˈkɜːrənsi"
+          },
+          {
+            "english": "souvenir",
+            "chinese": "纪念品",
+            "phonetic": "ˌsuːvəˈnɪr"
+          }]
+      };
+    </script>
+</body>
+</html>
